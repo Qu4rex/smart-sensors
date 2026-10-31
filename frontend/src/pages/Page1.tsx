@@ -128,7 +128,7 @@ export default function Page1() {
               <div className="device-card__icon"><DeviceIcon type={device.template.key} /></div>
               <h2 className="device-card__name">{device.name}</h2>
               <DeviceState type={device.template.key} />
-              <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↗</button>
+              <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↘</button>
             </article>
           ))}
         </div>
