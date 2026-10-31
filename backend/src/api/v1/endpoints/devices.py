@@ -29,3 +29,9 @@ async def get_device(name: str):
 async def send_command(name: str, cmd: Command):
     device_hub.send_command(name, cmd.signal, cmd.value)
     return {"ok": True}
+
+@router.post("/leak/wet")
+async def set_leak(wet: bool):
+    """намочить (true) или высушить (false) датчик протечки"""
+    device_hub.devices["leak"].set_wet(wet)
+    return {"ok": True}
