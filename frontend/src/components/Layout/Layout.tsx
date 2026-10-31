@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { meRequest } from '../../api/auth'
+import { createRoom, listRooms } from '../../api/rooms'
 import Sidebar from '../Sidebar/Sidebar'
 
 const SMALL_SCREEN = '(max-width: 900px)'
@@ -20,7 +21,7 @@ export type LayoutContext = {
   profile: UserProfile | null
   setProfile: (profile: UserProfile) => void
   rooms: Room[]
-  addRoom: (name: string) => Room
+  addRoom: (name: string) => Promise<Room>
 }
 
 export default function Layout() {
@@ -37,12 +38,16 @@ export default function Layout() {
       .catch(() => setProfile({ firstName: 'guest', secondName: '' }))
   }, [])
 
+  useEffect(() => {
+    listRooms().then(setRooms).catch(() => undefined)
+  }, [])
+
   const collapseOnSmallScreen = () => {
     if (window.matchMedia(SMALL_SCREEN).matches) setCollapsed(true)
   }
 
-  const addRoom = (name: string) => {
-    const room = { id: Date.now(), name }
+  const addRoom = async (name: string) => {
+    const room = await createRoom(name)
     setRooms((current) => [...current, room])
     return room
   }

@@ -99,7 +99,7 @@ export default function Page1() {
   const openAddDialog = () => {
     setSelectedTemplate(null)
     setDeviceName('')
-    setDeviceRoom('')
+    setDeviceRoom(activeRoom === 'all' ? '' : rooms.find((room) => room.id === activeRoom)?.name || '')
     setIsAddOpen(true)
   }
 
@@ -122,14 +122,18 @@ export default function Page1() {
     window.setTimeout(() => setShowToast(false), 3000)
   }
 
-  const createRoom = (event: FormEvent) => {
+  const createRoom = async (event: FormEvent) => {
     event.preventDefault()
     const name = roomName.trim()
     if (!name) return
-    const room = addRoom(name)
-    setActiveRoom(room.id)
-    setRoomName('')
-    setIsRoomOpen(false)
+    try {
+      const room = await addRoom(name)
+      setActiveRoom(room.id)
+      setRoomName('')
+      setIsRoomOpen(false)
+    } catch {
+      setTemplatesError('Не удалось сохранить комнату')
+    }
   }
 
   const loadDeviceDetails = (device: Device) => {
@@ -151,6 +155,11 @@ export default function Page1() {
     setDetailsError('')
   }
 
+  const selectedRoom = activeRoom === 'all' ? null : rooms.find((room) => room.id === activeRoom)
+  const visibleDevices = selectedRoom
+    ? devices.filter((device) => device.room === selectedRoom.name)
+    : devices
+
   const formatSignalValue = (signal: NonNullable<DeviceDetails>['declaration'][number]) => {
     if (!deviceDetails) return ''
     const value = deviceDetails.state[signal.name]
@@ -169,9 +178,9 @@ export default function Page1() {
         <button className="room-tabs__add" type="button" aria-label="Добавить комнату" onClick={() => setIsRoomOpen(true)}>+</button>
       </nav>
 
-      {devices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
+      {visibleDevices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
-          {devices.map((device) => {
+          {visibleDevices.map((device) => {
             const template = deviceOptions.find(({ key }) => key === device.templateKey)
             if (!template) return null
             return (
