@@ -1,24 +1,31 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 import { updateProfileRequest } from '../api/auth'
-import type { LayoutContext } from '../components/Layout/Layout'
+import type { LayoutContext, UserProfile } from '../components/Layout/Layout'
 import { useTheme } from '../hooks/useTheme'
 
 export default function SettingsPage() {
-  const { theme, toggleTheme } = useTheme()
   const { profile, setProfile } = useOutletContext<LayoutContext>()
+
+  if (!profile) return <section className="panel settings" aria-label="Настройки" />
+
+  return <SettingsForm profile={profile} setProfile={setProfile} />
+}
+
+type SettingsFormProps = {
+  profile: UserProfile
+  setProfile: LayoutContext['setProfile']
+}
+
+function SettingsForm({ profile, setProfile }: SettingsFormProps) {
+  const { theme, toggleTheme } = useTheme()
   const [firstName, setFirstName] = useState(profile.firstName === 'guest' ? '' : profile.firstName)
   const [lastName, setLastName] = useState(profile.secondName)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [serverError, setServerError] = useState('')
   const isDark = theme === 'dark'
-
-  useEffect(() => {
-    setFirstName(profile.firstName === 'guest' ? '' : profile.firstName)
-    setLastName(profile.secondName)
-  }, [profile])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()

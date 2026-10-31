@@ -6,25 +6,27 @@ import Sidebar from '../Sidebar/Sidebar'
 
 const SMALL_SCREEN = '(max-width: 900px)'
 
+export type UserProfile = {
+  firstName: string
+  secondName: string
+}
+
 export type LayoutContext = {
-  profile: {
-    firstName: string
-    secondName: string
-  }
-  setProfile: (profile: { firstName: string; secondName: string }) => void
+  profile: UserProfile | null
+  setProfile: (profile: UserProfile) => void
 }
 
 export default function Layout() {
   // на маленьких экранах панель по умолчанию свернута
   const [collapsed, setCollapsed] = useState(() => window.matchMedia(SMALL_SCREEN).matches)
-  const [profile, setProfile] = useState({ firstName: 'guest', secondName: '' })
+  const [profile, setProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     meRequest()
       .then((user) => {
         setProfile({ firstName: user.first_name || 'guest', secondName: user.second_name || '' })
       })
-      .catch(() => undefined)
+      .catch(() => setProfile({ firstName: 'guest', secondName: '' }))
   }, [])
 
   const collapseOnSmallScreen = () => {
@@ -37,7 +39,7 @@ export default function Layout() {
         collapsed={collapsed}
         onToggle={() => setCollapsed((value) => !value)}
         onNavigate={collapseOnSmallScreen}
-        userName={profile.firstName}
+        userName={profile?.firstName || 'guest'}
       />
 
       {!collapsed && <div className="backdrop" onClick={() => setCollapsed(true)} />}
