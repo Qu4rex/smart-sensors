@@ -283,7 +283,6 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  border-top: 1px solid var(--color-border);
 }
 
 .device-details__row {
@@ -291,8 +290,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 20px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--color-border);
+  padding: 7px 0;
 }
 
 .device-details__row dt {
@@ -303,6 +301,73 @@
   margin: 0;
   font-weight: 600;
   text-align: right;
+}
+
+.device-details__room-select {
+  max-width: 180px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 28px 6px 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.device-modal__delete {
+  width: 100%;
+  height: 44px;
+  margin-top: 24px;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-error);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.device-modal__delete:hover {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+}
+
+.device-modal__confirm-text {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.device-modal__confirm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.device-modal__cancel,
+.device-modal__confirm-delete {
+  flex: 1;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.device-modal__cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.device-modal__confirm-delete {
+  border: 1px solid var(--color-error);
+  background: var(--color-error);
+  color: #fff;
+}
+
+.device-modal__confirm-delete:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .device-modal--compact {
@@ -318,6 +383,7 @@
 }
 
 .device-modal__header h1 {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -326,24 +392,29 @@
   font-size: 1.3rem;
 }
 
-.device-modal__name-input {
+.device-modal__name-editor {
   min-width: 0;
   flex: 1;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
+  position: relative;
+}
+
+.device-modal__name-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   outline: 0;
-  background: var(--color-surface);
+  background: var(--color-hover);
   color: var(--color-text);
   font: inherit;
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
-.device-modal__actions {
-  display: flex;
-  gap: 8px;
+.device-modal__name-input:focus {
+  border-color: var(--color-border);
+  box-shadow: none;
 }
 
 .device-modal__close {
@@ -359,6 +430,102 @@
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.device-modal__back,
+.device-modal__more {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-hover);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.device-modal__back {
+  background: transparent;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.device-modal__menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.device-modal__more {
+  display: grid;
+  place-content: center;
+  gap: 3px;
+  background: transparent;
+}
+
+.device-modal__more span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.device-modal__menu-list {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 132px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.device-modal__menu-list button {
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.device-modal__menu-list button:hover {
+  background: var(--color-hover);
+}
+
+.device-modal__save {
+  display: block;
+  min-width: 112px;
+  height: 38px;
+  margin: 20px auto 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.device-modal__save:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+}
+
+.device-modal__save:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.device-modal__menu-list .device-modal__menu-delete {
+  color: var(--color-error);
 }
 
 .device-modal__refresh {

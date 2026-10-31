@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import { createStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, updateStoredDeviceName, type DeviceDetails, type DeviceTemplate } from '../api/devices'
+import { createStoredDevice, deleteStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, updateStoredDevice, type DeviceDetails, type DeviceTemplate } from '../api/devices'
 import barrierImage from '../assets/barrier.png'
 import counterImage from '../assets/counter.png'
 import elevatorImage from '../assets/elevator.png'
@@ -30,6 +30,12 @@ const deviceImages: Record<string, string> = {
   fire: fireImage,
   ventilation: ventilationImage,
   elevator: elevatorImage,
+}
+
+const hiddenDetailSignals: Record<string, Set<string>> = {
+  leak: new Set(['self_test']),
+  fire: new Set(['self_test']),
+  elevator: new Set(['floor_changed', 'emergency_btn']),
 }
 
 function DeviceIcon({ type }: { type: DeviceType }) {
@@ -83,7 +89,11 @@ export default function Page1() {
   const [detailsError, setDetailsError] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState('')
+  const [editedRoom, setEditedRoom] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
+  const [isDeviceMenuOpen, setIsDeviceMenuOpen] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [templatesError, setTemplatesError] = useState('')
   const [activeRoom, setActiveRoom] = useState<number | 'all'>('all')
@@ -169,7 +179,9 @@ export default function Page1() {
   const openDeviceDetails = (device: Device) => {
     setSelectedDevice(device)
     setEditedName(device.name)
+    setEditedRoom(device.room ?? '')
     setIsEditingName(false)
+    setIsDeviceMenuOpen(false)
     loadDeviceDetails(device)
   }
 
@@ -178,6 +190,7 @@ export default function Page1() {
     setDeviceDetails(null)
     setDetailsError('')
     setIsEditingName(false)
+    setIsDeleteConfirmOpen(false)
   }
 
   const saveDeviceName = async () => {
@@ -185,15 +198,32 @@ export default function Page1() {
     setIsSavingName(true)
     setDetailsError('')
     try {
-      const updatedDevice = await updateStoredDeviceName(selectedDevice.id, editedName.trim())
-      const updated = { ...selectedDevice, name: updatedDevice.name }
+      const updatedDevice = await updateStoredDevice(selectedDevice.id, { name: editedName.trim(), room: editedRoom || null })
+      const updated = { ...selectedDevice, name: updatedDevice.name, room: updatedDevice.room }
       setDevices((current) => current.map((device) => device.id === updated.id ? updated : device))
       setSelectedDevice(updated)
       setIsEditingName(false)
+      setIsDeviceMenuOpen(false)
     } catch (error) {
       setDetailsError(error instanceof Error ? error.message : 'Не удалось сохранить название')
     } finally {
       setIsSavingName(false)
+    }
+  }
+
+  const removeDevice = async () => {
+    if (!selectedDevice) return
+    setIsDeleting(true)
+    setDetailsError('')
+    try {
+      await deleteStoredDevice(selectedDevice.id)
+      setDevices((current) => current.filter((device) => device.id !== selectedDevice.id))
+      closeDeviceDetails()
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось удалить устройство')
+      setIsDeleteConfirmOpen(false)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -303,19 +333,24 @@ export default function Page1() {
         <div className="modal-backdrop" role="presentation" onMouseDown={closeDeviceDetails}>
           <section className="device-modal device-modal--details" role="dialog" aria-modal="true" aria-labelledby="device-details-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="device-modal__header">
+              <button type="button" className="device-modal__back" aria-label="Закрыть окно устройства" onClick={closeDeviceDetails}>←</button>
               {isEditingName ? (
-                <input id="device-details-title" className="device-modal__name-input" value={editedName} onChange={(event) => setEditedName(event.target.value)} maxLength={64} aria-label="Название устройства" autoFocus />
+                <div className="device-modal__name-editor">
+                  <input id="device-details-title" className="device-modal__name-input" value={editedName} onChange={(event) => setEditedName(event.target.value)} maxLength={64} aria-label="Название устройства" autoFocus />
+                </div>
               ) : (
                 <h1 id="device-details-title">{selectedDevice.name}</h1>
               )}
-              <div className="device-modal__actions">
-                <button type="button" className="device-modal__refresh" aria-label={isEditingName ? 'Сохранить название' : 'Изменить название'} onClick={() => isEditingName ? saveDeviceName() : setIsEditingName(true)} disabled={isSavingName}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    {isEditingName ? <path d="m4.5 12.75 6 6 9-13.5" /> : <path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />}
-                  </svg>
+              <div className="device-modal__menu">
+                <button type="button" className="device-modal__more" aria-label="Действия с устройством" aria-expanded={isDeviceMenuOpen} onClick={() => setIsDeviceMenuOpen((open) => !open)}>
+                  <span /><span /><span />
                 </button>
-                <button type="button" className="device-modal__refresh" aria-label="Обновить данные" onClick={() => loadDeviceDetails(selectedDevice)}>↻</button>
-                <button type="button" className="device-modal__close" aria-label="Закрыть" onClick={closeDeviceDetails}>×</button>
+                {isDeviceMenuOpen && !isEditingName && (
+                  <div className="device-modal__menu-list">
+                    <button type="button" onClick={() => { setIsEditingName(true); setIsDeviceMenuOpen(false) }}>Изменить</button>
+                    <button type="button" className="device-modal__menu-delete" onClick={() => { setIsDeleteConfirmOpen(true); setIsDeviceMenuOpen(false) }}>Удалить</button>
+                  </div>
+                )}
               </div>
             </div>
             {deviceDetails && <p className="device-modal__subtitle">{deviceDetails.title}</p>}
@@ -323,7 +358,18 @@ export default function Page1() {
             {!deviceDetails && !detailsError && <p className="device-modal__loading">Загружаем данные…</p>}
             {deviceDetails && (
               <dl className="device-details">
-                {deviceDetails.declaration.filter((signal) => signal.name !== 'fw').map((signal) => (
+                <div className="device-details__row">
+                  <dt>Комната</dt>
+                  {isEditingName ? (
+                    <dd><select className="device-details__room-select" value={editedRoom} onChange={(event) => setEditedRoom(event.target.value)} aria-label="Комната устройства">
+                      <option value="">Не выбрана</option>
+                      {rooms.map((room) => <option key={room.id} value={room.name}>{room.name}</option>)}
+                    </select></dd>
+                  ) : (
+                    <dd>{selectedDevice.room ?? 'Не выбрана'}</dd>
+                  )}
+                </div>
+                {deviceDetails.declaration.filter((signal) => signal.name !== 'fw' && !hiddenDetailSignals[selectedDevice.templateKey]?.has(signal.name)).map((signal) => (
                   <div className="device-details__row" key={signal.name}>
                     <dt>{signal.title}</dt>
                     <dd>{formatSignalValue(signal)}</dd>
@@ -331,6 +377,22 @@ export default function Page1() {
                 ))}
               </dl>
             )}
+            {isEditingName && <button type="button" className="device-modal__save" onClick={saveDeviceName} disabled={isSavingName || !editedName.trim()}>Сохранить</button>}
+          </section>
+        </div>
+      )}
+
+      {isDeleteConfirmOpen && selectedDevice && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setIsDeleteConfirmOpen(false)}>
+          <section className="device-modal device-modal--compact" role="dialog" aria-modal="true" aria-labelledby="delete-device-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="device-modal__header">
+              <h1 id="delete-device-title">Удалить устройство?</h1>
+            </div>
+            <p className="device-modal__confirm-text">«{selectedDevice.name}» будет удалено без возможности восстановления.</p>
+            <div className="device-modal__confirm-actions">
+              <button className="device-modal__cancel" type="button" onClick={() => setIsDeleteConfirmOpen(false)}>Отмена</button>
+              <button className="device-modal__confirm-delete" type="button" onClick={removeDevice} disabled={isDeleting}>{isDeleting ? 'Удаляем…' : 'Удалить'}</button>
+            </div>
           </section>
         </div>
       )}

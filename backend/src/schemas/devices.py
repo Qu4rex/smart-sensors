@@ -16,6 +16,7 @@ class StoredDeviceCreate(BaseModel):
 
 class StoredDeviceUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=64)
+    room: str | None = Field(default=None, max_length=64)
 
 
 class StoredDeviceRead(StoredDeviceCreate):

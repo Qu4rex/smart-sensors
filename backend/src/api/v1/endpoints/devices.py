@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from src.services import device_hub
@@ -52,9 +52,22 @@ async def update_stored_device(
     if device is None:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
     device.name = data.name.strip()
+    device.room = data.room.strip() if data.room else None
     await session.commit()
     await session.refresh(device)
     return device
+
+
+@router.delete("/stored/{device_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_stored_device(device_id: int, current_user: CurrentUserDep, session: SessionDep):
+    result = await session.execute(
+        select(UserDevice).where(UserDevice.id == device_id, UserDevice.owner_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(status_code=404, detail="Устройство не найдено")
+    await session.delete(device)
+    await session.commit()
 
 
 @router.get("/{name}")
