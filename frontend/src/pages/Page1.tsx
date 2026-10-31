@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import { createStoredDevice, deleteStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, updateStoredDevice, type DeviceDetails, type DeviceTemplate } from '../api/devices'
+import { createStoredDevice, deleteStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, sendDeviceCommand, updateStoredDevice, type DeviceDetails, type DeviceTemplate } from '../api/devices'
 import barrierImage from '../assets/barrier.png'
 import counterImage from '../assets/counter.png'
 import elevatorImage from '../assets/elevator.png'
@@ -74,6 +74,12 @@ function DeviceState({ type, state }: { type: DeviceType; state: Record<string, 
   if (type === 'ventilation') return <span className="device-card__value">{number('co2')} <small>ppm</small></span>
   if (type === 'fire') return <span className="device-card__value">{number('smoke')} <small>%</small></span>
   return <span className="device-card__value">—</span>
+}
+
+function DeviceSwitch({ type, state, onToggle }: { type: string; state: Record<string, unknown>; onToggle: () => void }) {
+  const isOn = type === 'light' ? Number(state.lamp) === 1 : Number(state.state) !== 0
+  const label = type === 'light' ? (isOn ? 'Выключить светильник' : 'Включить светильник') : (isOn ? 'Закрыть шлагбаум' : 'Открыть шлагбаум')
+  return <button className={`device-card__switch${isOn ? ' device-card__switch--on' : ''}`} type="button" role="switch" aria-checked={isOn} aria-label={label} onClick={onToggle}><span /></button>
 }
 
 export default function Page1() {
@@ -185,6 +191,23 @@ export default function Page1() {
     loadDeviceDetails(device)
   }
 
+  const toggleDevice = async (template: DeviceTemplate) => {
+    const isLight = template.key === 'light'
+    const isOn = isLight ? Number(template.state.lamp) === 1 : Number(template.state.state) !== 0
+    const signal = isLight ? 'lamp' : isOn ? 'close_cmd' : 'open_cmd'
+
+    try {
+      await sendDeviceCommand(template.key, signal, 1)
+      setDeviceOptions((current) => current.map((item) => {
+        if (item.key !== template.key) return item
+        if (isLight) return { ...item, state: { ...item.state, lamp: isOn ? 0 : 1 } }
+        return { ...item, state: { ...item.state, state: isOn ? 0 : 2 } }
+      }))
+    } catch (error) {
+      setTemplatesError(error instanceof Error ? error.message : 'Не удалось изменить состояние устройства')
+    }
+  }
+
   const closeDeviceDetails = () => {
     setSelectedDevice(null)
     setDeviceDetails(null)
@@ -261,6 +284,7 @@ export default function Page1() {
               <article className="device-card" key={device.id}>
                 <div className="device-card__content">
                   <h2 className="device-card__name">{device.name}</h2>
+                  {(template.key === 'light' || template.key === 'barrier') && <DeviceSwitch type={template.key} state={template.state} onToggle={() => toggleDevice(template)} />}
                   <DeviceState type={template.key} state={template.state} />
                 </div>
                 {deviceImages[template.key] ? (

@@ -190,10 +190,13 @@
   height: 24px;
   display: flex;
   align-items: center;
+  margin-top: 14px;
   padding: 3px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-hover);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .device-card__switch span {
@@ -202,6 +205,16 @@
   border-radius: 50%;
   background: var(--color-surface);
   box-shadow: var(--shadow-item);
+  transition: transform 0.18s ease;
+}
+
+.device-card__switch--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.device-card__switch--on span {
+  transform: translateX(18px);
 }
 
 .device-card__value {
