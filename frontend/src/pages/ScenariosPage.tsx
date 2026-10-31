@@ -28,6 +28,7 @@ type DeviceSignal = {
   control: string
   kind: string
   group: string
+  management: string
 }
 
 type DeviceDetails = {
@@ -205,7 +206,7 @@ export default function ScenariosPage() {
 
         if (!cancelled) {
           const available = (data.declaration ?? []).filter((signal) =>
-            signal.control.includes('r'),
+            signal.management.includes('r'),
           )
           setTriggerSignals(available)
 
@@ -261,7 +262,7 @@ export default function ScenariosPage() {
 
         if (!cancelled) {
           const available = (data.declaration ?? []).filter((signal) =>
-            signal.control.includes('w'),
+            signal.management.includes('w'),
           )
           setActionSignals(available)
 
