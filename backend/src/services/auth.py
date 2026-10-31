@@ -7,8 +7,8 @@ from src.core.config import settings
 from src.core.exceptions import (
     InactiveUserError,
     InvalidCredentialsError,
-    UserAlreadyExistsError,
-    UsernameTakenError,
+    LoginAlreadyExistsError,
+    LoginTakenError,
 )
 from src.core.security import create_access_token, hash_password, verify_password
 from src.crud.revoked_token import RevokedTokenCRUD
@@ -33,26 +33,26 @@ class AuthService:
     async def register_user(self, data: UserCreate) -> User:
         """Регистрирует нового пользователя в системе."""
 
-        if await self.users.get_by_username(data.username):
-            raise UsernameTakenError
+        if await self.users.get_by_login(data.login):
+            raise LoginTakenError
 
         try:
             user = await self.users.create(
-                username=data.username,
+                login=data.login,
                 hashed_password=hash_password(data.password),
             )
             await self.session.commit()
         except IntegrityError:
             # Два параллельных запроса с одним логином: проверка выше обоих пропустила.
             await self.session.rollback()
-            raise UserAlreadyExistsError from None
+            raise LoginAlreadyExistsError from None
 
         return user
 
-    async def authenticate_user(self, username: str, password: str) -> User:
-        """Аутентифицирует пользователя по username и паролю."""
+    async def authenticate_user(self, login: str, password: str) -> User:
+        """Аутентифицирует пользователя по login и паролю."""
 
-        user = await self.users.get_by_username(username)
+        user = await self.users.get_by_login(login)
 
         if not user:
             verify_password(password, _DUMMY_HASHED_PASSWORD)

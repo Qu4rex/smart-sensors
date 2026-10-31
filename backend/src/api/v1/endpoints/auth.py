@@ -21,7 +21,7 @@ async def register(data: UserCreate, service: AuthServiceDep):
 async def login(data: LoginRequest, service: AuthServiceDep):
     """Вход по логину и паролю (JSON). remember=true выдаёт токен на 30 дней."""
 
-    user = await service.authenticate_user(data.username, data.password)
+    user = await service.authenticate_user(data.login, data.password)
     return service.create_access_token_for_user(user, remember=data.remember)
 
 
@@ -31,7 +31,7 @@ async def login_form(
 ):
     """Вход через форму (OAuth2). Нужен для кнопки Authorize в Swagger, фронтенд шлёт /login."""
 
-    user = await service.authenticate_user(form.username, form.password)
+    user = await service.authenticate_user(form.login, form.password)
     return service.create_access_token_for_user(user)
 
 

@@ -18,19 +18,19 @@ class AppError(Exception):
         super().__init__(self.detail)
 
 
-class UserAlreadyExistsError(AppError):
-    """Пользователь с таким username уже существует."""
+class LoginAlreadyExistsError(AppError):
+    """Пользователь с таким login уже существует."""
 
     status_code = 409
     code = "user_already_exists"
-    default_detail = "Пользователь с таким username уже существует"
+    default_detail = "Пользователь с таким login уже существует"
 
 
-class UsernameTakenError(UserAlreadyExistsError):
-    """Username уже занят другим пользователем."""
+class LoginTakenError(LoginAlreadyExistsError):
+    """login уже занят другим пользователем."""
 
-    code = "username_taken"
-    default_detail = "Username уже занят"
+    code = "login_taken"
+    default_detail = "login уже занят"
 
 
 class InvalidCredentialsError(AppError):

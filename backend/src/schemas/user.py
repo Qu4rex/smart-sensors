@@ -3,31 +3,31 @@ from datetime import datetime
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-LOGIN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{4,17}$")
+LOGIN_RE = re.compile(r'^(?:\+7|8)\d{10}$')
 PASSWORD_RE = re.compile(r"^[!-~]{8,18}$")
 
 
 class UserBase(BaseModel):
     """Базовая модель пользователя."""
 
-    username: str
+    login: int
 
 
 class UserCreate(BaseModel):
     """Тело запроса на регистрацию: логин и пароль.
 
-    Логин принимается в поле `username` или `login` (фронтенд шлёт `login`).
+    Логин принимается в поле `login` (фронтенд шлёт `login`).
     """
 
-    username: str = Field(validation_alias=AliasChoices("username", "login"))
+    login: str
     password: str
 
-    @field_validator("username")
+    @field_validator("login")
     @classmethod
-    def validate_username(cls, value: str) -> str:
+    def validate_login(cls, value: int) -> int:
         if not LOGIN_RE.fullmatch(value):
             raise ValueError(
-                "Логин: от 5 до 18 символов, первая буква латинская, "
+                "Логин: в формате номера телефона, "
                 "дальше только латинские буквы и цифры"
             )
         return value
@@ -41,11 +41,9 @@ class UserCreate(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Тело запроса на вход (JSON). Логин принимается в поле `username` или `login`."""
+    """Тело запроса на вход (JSON)."""
 
-    username: str = Field(
-        validation_alias=AliasChoices("username", "login"), min_length=1, max_length=64
-    )
+    username: str = Field(min_length=1, max_length=64)
     # Верхняя граница защищает от очень длинных строк при хешировании
     password: str = Field(min_length=1, max_length=128)
     remember: bool = False  # True = запомнить на REMEMBER_ME_EXPIRE_DAYS дней
