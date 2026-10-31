@@ -36,6 +36,45 @@ type DeviceDetails = {
   declaration: DeviceSignal[]
 }
 
+
+const deviceNames: Record<string, string> = {
+  leak: 'датчик протечки',
+  barrier: 'шлагбаум',
+  thermostat: 'термостат',
+  counter: 'счётчик электричества',
+  light: 'освещение',
+  fire: 'пожарный датчик',
+  ventilation: 'вентиляция',
+  elevator: 'лифт',
+}
+
+const operatorNames: Record<string, string> = {
+  '==': 'равно',
+  '!=': 'не равно',
+  '>': 'больше',
+  '<': 'меньше',
+  '>=': 'больше или равно',
+  '<=': 'меньше или равно',
+}
+
+function getDeviceName(device: string) {
+  return deviceNames[device] ?? device
+}
+
+function getSignalName(
+  device: string,
+  signal: string,
+  signalTitles: Record<string, string>,
+) {
+  const title = signalTitles[`${device}:${signal}`] ?? signal
+
+  return title.charAt(0).toLowerCase() + title.slice(1)
+}
+
+function formatConditionValue(value: number | string) {
+  return String(value)
+}
+
 export default function ScenariosPage() {
   const [rules, setRules] = useState<Rule[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,6 +103,47 @@ export default function ScenariosPage() {
 
   const [triggerSignalsError, setTriggerSignalsError] = useState('')
   const [actionSignalsError, setActionSignalsError] = useState('')
+
+  const [signalTitles, setSignalTitles] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+  let cancelled = false
+
+  async function loadSignalTitles() {
+    const devices = Object.keys(deviceNames)
+
+    const results = await Promise.all(
+      devices.map(async (device) => {
+        try {
+          const data = await apiGet<DeviceDetails>(
+            `/devices/${encodeURIComponent(device)}`,
+          )
+
+          return (data.declaration ?? []).map((signal) => ({
+            key: `${device}:${signal.name}`,
+            title: signal.title,
+          }))
+        } catch {
+          return []
+        }
+      }),
+    )
+
+    if (!cancelled) {
+      setSignalTitles(
+        Object.fromEntries(
+          results.flat().map(({ key, title }) => [key, title]),
+        ),
+      )
+    }
+  }
+
+  void loadSignalTitles()
+
+  return () => {
+    cancelled = true
+  }
+}, [])
 
   useEffect(() => {
     let cancelled = false
@@ -477,34 +557,40 @@ export default function ScenariosPage() {
         </div>
       )}
 
-      {!loading && !error && rules.length > 0 && (
-        <div className="scenarios__list">
-          {rules.map((rule) => (
-            <article className="scenarios__card" key={rule.id}>
-              <h2>{rule.name}</h2>
-
-              <p>
-                <strong>Условие:</strong>{' '}
-                {rule.when.device} · {rule.when.signal}{' '}
-                {rule.when.op} {String(rule.when.value)}
+      
+    {!loading && !error && rules.length > 0 && (
+      <div className="scenarios__list">
+        {rules.map((rule) => (
+          <article className="scenarios__card" key={rule.id}>
+            <h2>{rule.name}</h2>
+        
+            <div className="scenario-rule">
+              <p className="scenario-rule__label">ЕСЛИ</p>
+        
+              <p className="scenario-rule__condition">
+                {getDeviceName(rule.when.device)} —{' '}
+                {getSignalName(rule.when.device, rule.when.signal, signalTitles)}
+                {operatorNames[rule.when.op] ?? rule.when.op}{' '}
+                {formatConditionValue(rule.when.value)}
               </p>
+        
+              <p className="scenario-rule__label">ТО</p>
+        
+              <ul className="scenario-rule__actions">
+                {rule.then.map((action, index) => (
+                  <li key={`${action.device}-${action.signal}-${index}`}>
+                    {getDeviceName(action.device)} —{' '}
+                    {getSignalName(action.device, action.signal, signalTitles)}
+                    {String(action.value)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
 
-              <div>
-                <strong>Действия:</strong>
-
-                <ul>
-                  {rule.then.map((action, index) => (
-                    <li key={`${action.device}-${action.signal}-${index}`}>
-                      {action.device} · {action.signal} ={' '}
-                      {String(action.value)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
     </section>
   )
 }

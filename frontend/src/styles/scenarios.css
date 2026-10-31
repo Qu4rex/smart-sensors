@@ -139,3 +139,31 @@
     padding: 18px;
   }
 }
+
+
+.scenario-rule {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scenario-rule__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted, #888);
+}
+
+.scenario-rule__condition {
+  margin: 0 0 8px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.scenario-rule__actions {
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.8;
+}
