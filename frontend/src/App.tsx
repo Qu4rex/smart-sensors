@@ -28,7 +28,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/page1" element={<Page1 />} />
           <Route path="/page2" element={<Page2 />} />
-          <Route path="/scenarios" element={<ScenariosPage />} />
+          <Route path="/page3" element={<ScenariosPage />} />
+          <Route path="/scenarios" element={<Navigate to="/page3" replace />} />
           <Route path="/page4" element={<Page4 />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
