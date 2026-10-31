@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 LOGIN_RE = re.compile(r'^(?:\+7|8)\d{10}$')
 PASSWORD_RE = re.compile(r"^[!-~]{8,18}$")
@@ -27,7 +27,7 @@ class UserCreate(BaseModel):
     def validate_login(cls, value: str) -> str:
         if not LOGIN_RE.fullmatch(value):
             raise ValueError(
-                "Логин: в формате номера телефона, "
+                "Логин: требуется в формате номера телефона, "
                 "дальше только латинские буквы и цифры"
             )
         return value
@@ -37,6 +37,25 @@ class UserCreate(BaseModel):
     def validate_password(cls, value: str) -> str:
         if not PASSWORD_RE.fullmatch(value):
             raise ValueError("Пароль: от 8 до 18 латинских букв, цифр и символов, без пробелов")
+        return value
+
+
+class UserUpdate(BaseModel):
+    """Тело PATCH /me: меняются только переданные поля."""
+
+    first_name: str | None = Field(default=None, min_length=3, max_length=64)
+    second_name: str | None = Field(default=None, min_length=3, max_length=64)
+
+    @field_validator("first_name", "second_name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if not value:
+            raise ValueError("Имя не может быть пустым")
+        if not re.fullmatch(r"^[A-Za-zА-Яа-яЁё\-' ]+$", value):
+            raise ValueError("Имя: только буквы, дефис, апостроф и пробел")
         return value
 
 
@@ -56,4 +75,6 @@ class UserRead(UserBase):
 
     id: int
     is_active: bool
+    first_name: str | None
+    second_name: str | None
     created_at: datetime
