@@ -1,0 +1,144 @@
+# Проверки качества: линт, форматирование, тесты, сборка.
+# Запускаются на каждый pull request и вызываются из deploy.yml перед деплоем.
+
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Новый коммит в PR отменяет устаревший запуск. Для запусков из deploy.yml группа своя.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: ci_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_user -d ci_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Эти переменные читает приложение (backend/src/core/config.py)
+      POSTGRES_USER: ci_user
+      POSTGRES_PASSWORD: ci_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ci_db
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-0123456789
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Установка зависимостей
+        # --locked: упадёт, если uv.lock не соответствует pyproject.toml
+        run: uv sync --locked
+
+      - name: Линтер (ruff check)
+        run: uv run ruff check .
+
+      - name: Форматирование (ruff format)
+        run: uv run ruff format --check .
+
+      - name: Миграции на PostgreSQL
+        run: uv run alembic upgrade head
+
+      - name: Модели совпадают с миграциями
+        # Падает, если изменили модель и забыли создать миграцию
+        run: uv run alembic check
+
+      - name: Тесты
+        run: uv run pytest
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Линтер (eslint)
+        run: npm run lint
+
+      - name: Форматирование (prettier)
+        run: npm run format:check
+
+      - name: Тесты
+        run: npm test
+
+      - name: Проверка типов и сборка
+        run: npm run build
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Подготовка окружения и временного сертификата
+        run: |
+          sed -e 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=ci_password/' \
+              -e "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" \
+              -e 's/^DEBUG=.*/DEBUG=false/' \
+              backend/.env.example > backend/.env
+          mkdir -p frontend/nginx/ssl
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout frontend/nginx/ssl/privkey.pem -out frontend/nginx/ssl/fullchain.pem \
+            -subj "/CN=localhost"
+
+      - name: Запуск всего стека (проверка Dockerfile, compose и nginx)
+        # Используем только боевой compose-файл, как на сервере
+        run: docker compose -f docker-compose.yml up -d --build --wait --wait-timeout 240
+
+      - name: Проверка сайта по HTTPS
+        run: |
+          curl -fsk https://localhost/api/v1/health
+          curl -fsk -o /dev/null https://localhost/
+          # Порты базы и backend не должны быть открыты наружу
+          for port in 5432 8000; do
+            if (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+              echo "::error::Порт ${port} открыт наружу, а должен быть закрыт"
+              exit 1
+            fi
+          done
+
+      - name: Логи при ошибке
+        if: failure()
+        run: docker compose -f docker-compose.yml logs --tail=100
+        
