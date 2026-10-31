@@ -56,15 +56,14 @@ export default function ScenariosPage() {
   const [actionValue, setActionValue] = useState('1')
 
   /* сигналы тут */
-const [triggerSignals, setTriggerSignals] = useState<DeviceSignal[]>([])
-const [actionSignals, setActionSignals] = useState<DeviceSignal[]>([])
+  const [triggerSignals, setTriggerSignals] = useState<DeviceSignal[]>([])
+  const [actionSignals, setActionSignals] = useState<DeviceSignal[]>([])
 
-const [triggerSignalsLoading, setTriggerSignalsLoading] = useState(false)
-const [actionSignalsLoading, setActionSignalsLoading] = useState(false)
+  const [triggerSignalsLoading, setTriggerSignalsLoading] = useState(false)
+  const [actionSignalsLoading, setActionSignalsLoading] = useState(false)
 
-const [triggerSignalsError, setTriggerSignalsError] = useState('')
-const [actionSignalsError, setActionSignalsError] = useState('')
-
+  const [triggerSignalsError, setTriggerSignalsError] = useState('')
+  const [actionSignalsError, setActionSignalsError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -91,107 +90,6 @@ const [actionSignalsError, setActionSignalsError] = useState('')
       }
     }
 
-/* два запроса тк устройство для условия может отличаться от устройства, которым мы управляем*/
-
-useEffect(() => {
-  setTriggerSignals([])
-  setTriggerSignal('')
-  setTriggerSignalsError('')
-
-  if (!triggerDevice) {
-    setTriggerSignalsLoading(false)
-    return
-  }
-
-  let cancelled = false
-
-  async function loadSignals() {
-    setTriggerSignalsLoading(true)
-
-    try {
-      const data = await apiGet<DeviceDetails>(
-        `/devices/${encodeURIComponent(triggerDevice)}`,
-      )
-
-      if (!cancelled) {
-        setTriggerSignals(
-          (data.declaration ?? []).filter(
-            (signal) => signal.control.includes('r'),
-          ),
-        )
-      }
-    } catch (err) {
-      if (!cancelled) {
-        setTriggerSignalsError(
-          err instanceof Error
-            ? err.message
-            : 'Не удалось загрузить сигналы',
-        )
-      }
-    } finally {
-      if (!cancelled) {
-        setTriggerSignalsLoading(false)
-      }
-    }
-  }
-
-  void loadSignals()
-
-  return () => {
-    cancelled = true
-  }
-}, [triggerDevice])
-
-useEffect(() => {
-  setActionSignals([])
-  setActionSignal('')
-  setActionSignalsError('')
-
-  if (!actionDevice || actionDevice === 'notification') {
-    setActionSignalsLoading(false)
-    return
-  }
-
-  let cancelled = false
-
-  async function loadSignals() {
-    setActionSignalsLoading(true)
-
-    try {
-      const data = await apiGet<DeviceDetails>(
-        `/devices/${encodeURIComponent(actionDevice)}`,
-      )
-
-      if (!cancelled) {
-        setActionSignals(
-          (data.declaration ?? []).filter(
-            (signal) =>
-              signal.control.includes('w'),
-          ),
-        )
-      }
-    } catch (err) {
-      if (!cancelled) {
-        setActionSignalsError(
-          err instanceof Error
-            ? err.message
-            : 'Не удалось загрузить сигналы',
-        )
-      }
-    } finally {
-      if (!cancelled) {
-        setActionSignalsLoading(false)
-      }
-    }
-  }
-
-  void loadSignals()
-
-  return () => {
-    cancelled = true
-  }
-}, [actionDevice])
-
     void loadRules()
 
     return () => {
@@ -199,17 +97,120 @@ useEffect(() => {
     }
   }, [])
 
-async function createRule(event: React.FormEvent<HTMLFormElement>) {
-  if (actionDevice === 'notification') {
-  setFormError('Действие «Уведомление» пока не реализовано')
-  return
-}
-  
-  event.preventDefault()
+  /* Загружаем сигналы устройства для условия */
+  useEffect(() => {
+    setTriggerSignals([])
+    setTriggerSignal('')
+    setTriggerSignalsError('')
 
-  setSaving(true)
-  setFormError('')
-  setFormSuccess('')
+    if (!triggerDevice) {
+      setTriggerSignalsLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    async function loadSignals() {
+      setTriggerSignalsLoading(true)
+
+      try {
+        const data = await apiGet<DeviceDetails>(
+          `/devices/${encodeURIComponent(triggerDevice)}`,
+        )
+
+        if (!cancelled) {
+          setTriggerSignals(
+            (data.declaration ?? []).filter(
+              (signal) => signal.control.includes('r'),
+            ),
+          )
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setTriggerSignalsError(
+            err instanceof Error
+              ? err.message
+              : 'Не удалось загрузить сигналы',
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setTriggerSignalsLoading(false)
+        }
+      }
+    }
+
+    void loadSignals()
+
+    return () => {
+      cancelled = true
+    }
+  }, [triggerDevice])
+
+  /* два запроса тк устройство для условия может отличаться от устройства, которым мы управляем*/
+
+  useEffect(() => {
+    setActionSignals([])
+    setActionSignal('')
+    setActionSignalsError('')
+
+    if (!actionDevice || actionDevice === 'notification') {
+      setActionSignalsLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    async function loadSignals() {
+      setActionSignalsLoading(true)
+
+      try {
+        const data = await apiGet<DeviceDetails>(
+          `/devices/${encodeURIComponent(actionDevice)}`,
+        )
+
+        if (!cancelled) {
+          setActionSignals(
+            (data.declaration ?? []).filter(
+              (signal) => signal.control.includes('w'),
+            ),
+          )
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setActionSignalsError(
+            err instanceof Error
+              ? err.message
+              : 'Не удалось загрузить сигналы',
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setActionSignalsLoading(false)
+        }
+      }
+    }
+
+    void loadSignals()
+
+    return () => {
+      cancelled = true
+    }
+  }, [actionDevice])
+
+
+
+  async function createRule(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (actionDevice === 'notification') {
+      setFormError('Действие «Уведомление» пока не реализовано')
+      return
+    }
+
+    setSaving(true)
+    setFormError('')
+    setFormSuccess('')
 
   const parseValue = (value: string) => {
     const trimmed = value.trim()
@@ -341,7 +342,7 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
           
         {triggerSignals.map((signal) => (
           <option key={signal.name} value={signal.name}>
-            {signal.title} ({signal.name})
+            {signal.title}
           </option>
         ))}
       </select>
@@ -395,26 +396,20 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
       </select>
     </label>
 
-
-    <label>
-      Сигнал действия
-      <input
-        value={actionSignal}
-        onChange={(event) => setActionSignal(event.target.value)}
-        required
-        placeholder="Название сигнала"
-      />
-    </label>
-
-    /* Уведомления сделайте блин */
-
     <label>
       Сигнал действия
       <select
         value={actionSignal}
-        disabled={!actionDevice || actionSignalsLoading || !!actionSignalsError}
+        onChange={(event) => setActionSignal(event.target.value)}
+        disabled={
+          !actionDevice ||
+          actionDevice === 'notification' ||
+          actionSignalsLoading ||
+          !!actionSignalsError
+        }
         required
       >
+
         <option value="">
           {!actionDevice
             ? 'Сначала выберите устройство'
@@ -425,7 +420,7 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
 
         {actionSignals.map((signal) => (
           <option key={signal.name} value={signal.name}>
-            {signal.title} ({signal.name})
+            {signal.title}
           </option>
         ))}
       </select>
