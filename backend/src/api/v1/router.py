@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from src.api.v1.endpoints import devices, health, rules
+from src.api.v1.endpoints import auth, devices, health, rules
 
 api_router = APIRouter()
 
