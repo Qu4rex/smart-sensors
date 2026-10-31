@@ -81,7 +81,7 @@ async def get_device(name: str):
 @router.post("/{name}/command")
 async def send_command(name: str, cmd: Command):
     device_hub.send_command(name, cmd.signal, cmd.value)
-    return {"ok": True}
+    return {"ok": True, "state": device_hub.get_state(name)}
 
 @router.post("/leak/wet")
 async def set_leak(wet: bool):

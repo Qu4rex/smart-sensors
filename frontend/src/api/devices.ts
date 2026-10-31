@@ -39,8 +39,8 @@ export function getDeviceDetails(key: string): Promise<DeviceDetails> {
   return apiGet<DeviceDetails>(`/devices/${key}`)
 }
 
-export function sendDeviceCommand(key: string, signal: string, value: number): Promise<{ ok: boolean }> {
-  return apiPost<{ ok: boolean }>(`/devices/${key}/command`, { signal, value })
+export function sendDeviceCommand(key: string, signal: string, value: number): Promise<{ ok: boolean; state: Record<string, unknown> }> {
+  return apiPost<{ ok: boolean; state: Record<string, unknown> }>(`/devices/${key}/command`, { signal, value })
 }
 
 export function listStoredDevices(): Promise<StoredDevice[]> {

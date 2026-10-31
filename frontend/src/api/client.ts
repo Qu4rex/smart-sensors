@@ -18,6 +18,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      cache: 'no-store',
     })
   } catch (error) {
     if (error instanceof TypeError) throw new Error(NETWORK_ERROR, { cause: error })

@@ -86,6 +86,7 @@ export default function Page1() {
   const { rooms, addRoom } = useOutletContext<LayoutContext>()
   const [devices, setDevices] = useState<Device[]>([])
   const [deviceOptions, setDeviceOptions] = useState<DeviceTemplate[]>([])
+  const [controlOverrides, setControlOverrides] = useState<Record<string, boolean>>({})
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<DeviceTemplate | null>(null)
   const [deviceName, setDeviceName] = useState('')
@@ -111,6 +112,18 @@ export default function Page1() {
       listDeviceTemplates()
         .then((templates) => {
           setDeviceOptions(templates)
+          setControlOverrides((current) => {
+            const remaining = { ...current }
+            templates.forEach((template) => {
+              const desired = current[template.key]
+              if (desired === undefined) return
+              const actual = template.key === 'light'
+                ? Number(template.state.lamp) === 1
+                : template.key === 'barrier' && Number(template.state.state) !== 0
+              if (actual === desired) delete remaining[template.key]
+            })
+            return remaining
+          })
           setTemplatesError('')
         })
         .catch(() => setTemplatesError('Не удалось загрузить шаблоны устройств'))
@@ -195,17 +208,29 @@ export default function Page1() {
     const isLight = template.key === 'light'
     const isOn = isLight ? Number(template.state.lamp) === 1 : Number(template.state.state) !== 0
     const signal = isLight ? 'lamp' : isOn ? 'close_cmd' : 'open_cmd'
+    const commandValue = isLight ? (isOn ? 0 : 1) : 1
+    const nextState = !isOn
+
+    setControlOverrides((current) => ({ ...current, [template.key]: nextState }))
 
     try {
-      await sendDeviceCommand(template.key, signal, 1)
-      setDeviceOptions((current) => current.map((item) => {
-        if (item.key !== template.key) return item
-        if (isLight) return { ...item, state: { ...item.state, lamp: isOn ? 0 : 1 } }
-        return { ...item, state: { ...item.state, state: isOn ? 0 : 2 } }
-      }))
+      await sendDeviceCommand(template.key, signal, commandValue)
     } catch (error) {
+      setControlOverrides((current) => {
+        const next = { ...current }
+        delete next[template.key]
+        return next
+      })
       setTemplatesError(error instanceof Error ? error.message : 'Не удалось изменить состояние устройства')
     }
+  }
+
+  const displayTemplate = (template: DeviceTemplate): DeviceTemplate => {
+    const override = controlOverrides[template.key]
+    if (override === undefined) return template
+    if (template.key === 'light') return { ...template, state: { ...template.state, lamp: override ? 1 : 0 } }
+    if (template.key === 'barrier') return { ...template, state: { ...template.state, state: override ? 2 : 0 } }
+    return template
   }
 
   const closeDeviceDetails = () => {
@@ -278,8 +303,9 @@ export default function Page1() {
       {visibleDevices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
           {visibleDevices.map((device) => {
-            const template = deviceOptions.find(({ key }) => key === device.templateKey)
-            if (!template) return null
+            const deviceTemplate = deviceOptions.find(({ key }) => key === device.templateKey)
+            if (!deviceTemplate) return null
+            const template = displayTemplate(deviceTemplate)
             return (
               <article className="device-card" key={device.id}>
                 <div className="device-card__content">
