@@ -22,6 +22,15 @@ def add_rule(rule):
     return rule
 
 
+def update_rule(rule_id, data):
+    if rule_id not in rules:
+        return None
+    rule = {"id": rule_id, **data}
+    rules[rule_id] = rule
+    _active.pop(rule_id, None)
+    return rule
+
+
 def delete_rule(rule_id):
     """ удаляет правило по id """
     rules.pop(rule_id, None)
