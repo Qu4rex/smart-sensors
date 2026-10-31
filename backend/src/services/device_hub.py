@@ -7,9 +7,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "emulators"))
 
 from devices import REGISTRY
 
-NAMES = ["leak", "barrier", "thermostat", "counter", "light"]
+NAMES = [
+    "leak",
+    "barrier",
+    "thermostat",
+    "counter",
+    "light",
+    "fire",
+    "ventilation",
+    "elevator",
+]
 
-devices = {name: REGISTRY[name](serial=f"ctrlaltelite_{name}_01") for name in NAMES}
+devices = {
+    name: REGISTRY[name](serial=f"ctrlaltelite_{name}_01")
+    for name in NAMES
+}
 
 async def tick_loop():
     while True:
@@ -22,4 +34,10 @@ def get_state(name):
 
 def send_command(name, signal, value):
     device = devices[name]
-    device.handle_recv({"recv": [{"command": "management", "id": device.serial, signal: value}]})
+    device.handle_recv({
+        "recv": [{
+            "command": "management",
+            "id": device.serial,
+            signal: value,
+        }]
+    })
