@@ -19,13 +19,13 @@ type SidebarProps = {
   collapsed: boolean
   onToggle: () => void
   onNavigate: () => void
+  userName: string
 }
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'menu__item menu__item--active' : 'menu__item'
 
-export default function Sidebar({ collapsed, onToggle, onNavigate }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, onNavigate, userName }: SidebarProps) {
   const [logoutOpen, setLogoutOpen] = useState(false)
-  const username = 'guest'
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -77,9 +77,9 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }: SidebarProp
         </NavLink>
 
         <div className="profile">
-          <div className="profile__info" title={username}>
+          <div className="profile__info" title={userName}>
             <ProfileIcon />
-            <span className="profile__name">{username}</span>
+            <span className="profile__name">{userName}</span>
           </div>
 
           <button
