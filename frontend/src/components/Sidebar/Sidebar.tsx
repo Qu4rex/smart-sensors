@@ -11,8 +11,7 @@ import LogoutDialog from './LogoutDialog'
 const pages = [
   { to: '/page1', label: 'Устройства', icon: <DeviceIcon /> },
   { to: '/page2', label: 'Эмуляция', icon: <EmulationIcon /> },
-  { to: '/page3', label: 'Сценарии', icon: <FileIcon /> },
-  { to: '/page4', label: 'Страница 4', icon: <FileIcon /> },
+  { to: '/page3', label: 'Сценарии', icon: <FileIcon /> }
 ]
 
 type SidebarProps = {
