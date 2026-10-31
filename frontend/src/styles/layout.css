@@ -9,10 +9,14 @@
   flex: 1;
   min-width: 0;
   display: flex;
+  overflow: hidden;
 }
 
 .panel {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -37,6 +41,7 @@
 }
 
 .room-tabs {
+  width: fit-content;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -45,6 +50,17 @@
   padding: 4px;
   border-radius: 18px;
   background: var(--color-hover);
+}
+
+.room-tabs__scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.room-tabs__scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .room-tabs__item,
@@ -476,6 +492,7 @@
 }
 
 .room-card {
+  position: relative;
   min-height: 120px;
   display: flex;
   align-items: flex-end;
@@ -486,6 +503,26 @@
   font-size: 1.05rem;
   font-weight: 600;
   box-shadow: var(--shadow-item);
+}
+
+.room-card__details {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.room-card__details:hover {
+  background: var(--color-hover);
 }
 
 .panel__add {
@@ -506,7 +543,6 @@
   font-weight: 400;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 3px 0 var(--color-accent-dark);
 }
 
 .panel__add:hover {
@@ -515,7 +551,6 @@
 
 .panel__add:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--color-accent-dark);
 }
 
 .panel__add:focus-visible {
@@ -541,5 +576,52 @@
 @media (max-width: 480px) {
   :root {
     --gap: 10px;
+  }
+}
+
+@media (max-width: 700px) {
+  .devices-panel {
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .room-tabs {
+    max-width: none;
+  }
+
+  .room-tabs__item {
+    height: 38px;
+    padding: 0 14px;
+  }
+
+  .room-tabs__add {
+    width: 38px;
+    height: 38px;
+  }
+
+  .device-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .device-card {
+    min-height: 156px;
+  }
+
+  .device-card__image {
+    top: 14px;
+    right: 14px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .device-card__name {
+    padding-right: 82px;
+  }
+
+  .panel__add {
+    right: 16px;
+    bottom: 16px;
   }
 }

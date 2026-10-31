@@ -63,7 +63,7 @@ function DeviceState({ type, state }: { type: DeviceType; state: Record<string, 
   if (type === 'light') return <span className="device-card__status">{Number(value('lamp')) === 1 ? 'Включен' : 'Выключен'}</span>
   if (type === 'thermostat') return <span className="device-card__value">{number('temperature')} <small>°C</small></span>
   if (type === 'counter') return <span className="device-card__value">{number('total')}</span>
-  if (type === 'leak') return <span className={Number(value('leak')) === 1 ? 'device-card__status device-card__status--alert' : 'device-card__status'}>{Number(value('leak')) === 1 ? 'Протечка' : 'Отлично'}</span>
+  if (type === 'leak') return <span className={Number(value('leak')) === 1 ? 'device-card__status device-card__status--alert' : 'device-card__status'}>{Number(value('leak')) === 1 ? 'Протечка' : 'Протечки нет'}</span>
   if (type === 'elevator') return <span className="device-card__value">{number('floor_current')} <small>этаж</small></span>
   if (type === 'ventilation') return <span className="device-card__value">{number('co2')} <small>ppm</small></span>
   if (type === 'fire') return <span className="device-card__value">{number('smoke')} <small>%</small></span>
@@ -189,13 +189,15 @@ export default function Page1() {
 
   return (
     <section className="panel panel--with-add devices-panel" aria-label="Устройства">
-      <nav className="room-tabs" aria-label="Комнаты устройств">
-        <button className={activeRoom === 'all' ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} type="button" onClick={() => setActiveRoom('all')}>Все устройства</button>
-        {rooms.map((room) => (
-          <button className={activeRoom === room.id ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} key={room.id} type="button" onClick={() => setActiveRoom(room.id)}>{room.name}</button>
-        ))}
-        <button className="room-tabs__add" type="button" aria-label="Добавить комнату" onClick={() => setIsRoomOpen(true)}>+</button>
-      </nav>
+      <div className="room-tabs__scroll">
+        <nav className="room-tabs" aria-label="Комнаты устройств">
+          <button className={activeRoom === 'all' ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} type="button" onClick={() => setActiveRoom('all')}>Все устройства</button>
+          {rooms.map((room) => (
+            <button className={activeRoom === room.id ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} key={room.id} type="button" onClick={() => setActiveRoom(room.id)}>{room.name}</button>
+          ))}
+          <button className="room-tabs__add" type="button" aria-label="Добавить комнату" onClick={() => setIsRoomOpen(true)}>+</button>
+        </nav>
+      </div>
 
       {visibleDevices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
