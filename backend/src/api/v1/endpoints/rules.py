@@ -10,7 +10,7 @@ async def list_rules():
     """ Метод получения всех сценариев """
     return list(rules.rules.values())
 
-@router.post("")
+@router.post("/")
 async def create_rule(rule: RuleIn):
     """ Метод создания сценария """
     return rules.add_rule(rule.model_dump())
