@@ -23,6 +23,19 @@ type Rule = {
   then: RuleAction[]
 }
 
+/* передаем возможные сигналы */
+type DeviceSignal = {
+  name: string
+  title: string
+  control: string
+  kind: string
+  group: string
+}
+
+type DeviceDetails = {
+  declaration: DeviceSignal[]
+}
+
 export default function ScenariosPage() {
   const [rules, setRules] = useState<Rule[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,14 +46,25 @@ export default function ScenariosPage() {
   const [formSuccess, setFormSuccess] = useState('')
 
   const [name, setName] = useState('')
-  const [triggerDevice, setTriggerDevice] = useState('leak')
+  const [triggerDevice, setTriggerDevice] = useState('')
   const [triggerSignal, setTriggerSignal] = useState('')
   const [operator, setOperator] = useState('==')
   const [triggerValue, setTriggerValue] = useState('1')
 
-  const [actionDevice, setActionDevice] = useState('light')
+  const [actionDevice, setActionDevice] = useState('')
   const [actionSignal, setActionSignal] = useState('')
   const [actionValue, setActionValue] = useState('1')
+
+  /* сигналы тут */
+const [triggerSignals, setTriggerSignals] = useState<DeviceSignal[]>([])
+const [actionSignals, setActionSignals] = useState<DeviceSignal[]>([])
+
+const [triggerSignalsLoading, setTriggerSignalsLoading] = useState(false)
+const [actionSignalsLoading, setActionSignalsLoading] = useState(false)
+
+const [triggerSignalsError, setTriggerSignalsError] = useState('')
+const [actionSignalsError, setActionSignalsError] = useState('')
+
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +91,107 @@ export default function ScenariosPage() {
       }
     }
 
+/* два запроса тк устройство для условия может отличаться от устройства, которым мы управляем*/
+
+useEffect(() => {
+  setTriggerSignals([])
+  setTriggerSignal('')
+  setTriggerSignalsError('')
+
+  if (!triggerDevice) {
+    setTriggerSignalsLoading(false)
+    return
+  }
+
+  let cancelled = false
+
+  async function loadSignals() {
+    setTriggerSignalsLoading(true)
+
+    try {
+      const data = await apiGet<DeviceDetails>(
+        `/devices/${encodeURIComponent(triggerDevice)}`,
+      )
+
+      if (!cancelled) {
+        setTriggerSignals(
+          (data.declaration ?? []).filter(
+            (signal) => signal.control.includes('r'),
+          ),
+        )
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setTriggerSignalsError(
+          err instanceof Error
+            ? err.message
+            : 'Не удалось загрузить сигналы',
+        )
+      }
+    } finally {
+      if (!cancelled) {
+        setTriggerSignalsLoading(false)
+      }
+    }
+  }
+
+  void loadSignals()
+
+  return () => {
+    cancelled = true
+  }
+}, [triggerDevice])
+
+useEffect(() => {
+  setActionSignals([])
+  setActionSignal('')
+  setActionSignalsError('')
+
+  if (!actionDevice || actionDevice === 'notification') {
+    setActionSignalsLoading(false)
+    return
+  }
+
+  let cancelled = false
+
+  async function loadSignals() {
+    setActionSignalsLoading(true)
+
+    try {
+      const data = await apiGet<DeviceDetails>(
+        `/devices/${encodeURIComponent(actionDevice)}`,
+      )
+
+      if (!cancelled) {
+        setActionSignals(
+          (data.declaration ?? []).filter(
+            (signal) =>
+              signal.control.includes('w'),
+          ),
+        )
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setActionSignalsError(
+          err instanceof Error
+            ? err.message
+            : 'Не удалось загрузить сигналы',
+        )
+      }
+    } finally {
+      if (!cancelled) {
+        setActionSignalsLoading(false)
+      }
+    }
+  }
+
+  void loadSignals()
+
+  return () => {
+    cancelled = true
+  }
+}, [actionDevice])
+
     void loadRules()
 
     return () => {
@@ -75,6 +200,11 @@ export default function ScenariosPage() {
   }, [])
 
 async function createRule(event: React.FormEvent<HTMLFormElement>) {
+  if (actionDevice === 'notification') {
+  setFormError('Действие «Уведомление» пока не реализовано')
+  return
+}
+  
   event.preventDefault()
 
   setSaving(true)
@@ -143,7 +273,6 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
         </span>
       </header>
 
-
 <div className="scenarios__toolbar">
   <button
     type="button"
@@ -182,8 +311,9 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
         value={triggerDevice}
         onChange={(event) => setTriggerDevice(event.target.value)}
       >
+        <option value="">Выберите устройство</option>
         <option value="leak">Датчик протечки</option>
-        <option value="barrier">Барьер</option>
+        <option value="barrier">Шлагбаум</option>
         <option value="thermostat">Термостат</option>
         <option value="counter">Счётчик электричества</option>
         <option value="light">Освещение</option>
@@ -195,14 +325,33 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
 
     <label>
       Сигнал
-      <input
+      <select
         value={triggerSignal}
         onChange={(event) => setTriggerSignal(event.target.value)}
+        disabled={!triggerDevice || triggerSignalsLoading || !!triggerSignalsError}
         required
-        placeholder="Название сигнала"
-      />
-    </label>
+      >
+        <option value="">
+          {!triggerDevice
+            ? 'Сначала выберите устройство'
+            : triggerSignalsLoading
+              ? 'Загружаем сигналы...'
+              : 'Выберите сигнал'}
+        </option>
+          
+        {triggerSignals.map((signal) => (
+          <option key={signal.name} value={signal.name}>
+            {signal.title} ({signal.name})
+          </option>
+        ))}
+      </select>
 
+  {triggerSignalsError && (
+    <span role="alert" className="scenarios__message--error">
+      {triggerSignalsError}
+    </span>
+  )}
+</label>
     <label>
       Оператор
       <select
@@ -230,18 +379,22 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
     <h3>Тогда выполнить</h3>
 
     <label>
-      Устройство
+      Действие 
       <select
         value={actionDevice}
         onChange={(event) => setActionDevice(event.target.value)}
+        required
       >
+        <option value="">Выберите действие</option>
         <option value="light">Освещение</option>
         <option value="ventilation">Вентиляция</option>
-        <option value="barrier">Барьер</option>
+        <option value="barrier">Шлагбаум</option>
         <option value="thermostat">Термостат</option>
         <option value="elevator">Лифт</option>
+        <option value="notification">Уведомление</option>
       </select>
     </label>
+
 
     <label>
       Сигнал действия
@@ -253,14 +406,45 @@ async function createRule(event: React.FormEvent<HTMLFormElement>) {
       />
     </label>
 
+    /* Уведомления сделайте блин */
+
     <label>
-      Значение действия
-      <input
-        value={actionValue}
-        onChange={(event) => setActionValue(event.target.value)}
+      Сигнал действия
+      <select
+        value={actionSignal}
+        disabled={!actionDevice || actionSignalsLoading || !!actionSignalsError}
         required
-      />
+      >
+        <option value="">
+          {!actionDevice
+            ? 'Сначала выберите устройство'
+            : actionSignalsLoading
+              ? 'Загружаем сигналы...'
+              : 'Выберите сигнал'}
+        </option>
+
+        {actionSignals.map((signal) => (
+          <option key={signal.name} value={signal.name}>
+            {signal.title} ({signal.name})
+          </option>
+        ))}
+      </select>
+
+      {actionSignalsError && (
+        <span role="alert" className="scenarios__message--error">
+          {actionSignalsError}
+        </span>
+      )}
     </label>
+
+<label>
+  Значение действия
+  <input
+    value={actionValue}
+    onChange={(event) => setActionValue(event.target.value)}
+    required
+  />
+</label>
 
     {formError && (
       <p className="scenarios__message--error" role="alert">
