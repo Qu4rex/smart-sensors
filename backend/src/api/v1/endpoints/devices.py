@@ -1,0 +1,29 @@
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from src.services import device_hub
+
+router = APIRouter(prefix="/devices")
+
+
+class Command(BaseModel):
+    signal: str
+    value: int | float | str
+@router.get("")
+async def list_devices():
+    return {name: {"title": d.title, "state": device_hub.get_state(name)}
+            for name, d in device_hub.devices.items()}
+
+
+@router.get("/{name}")
+async def get_device(name: str):
+    device = device_hub.devices[name]
+    return {"title": device.title,
+            "state": device_hub.get_state(name),
+            "declaration": device.declaration()}
+
+
+@router.post("/{name}/command")
+async def send_command(name: str, cmd: Command):
+    device_hub.send_command(name, cmd.signal, cmd.value)
+    return {"ok": True}
