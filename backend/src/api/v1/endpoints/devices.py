@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Query
+from uuid import uuid4
+
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import select
 #from pydantic import BaseModel
 
 from src.services import device_hub
@@ -86,8 +89,6 @@ async def set_leak(wet: bool):
     """намочить (true) или высушить (false) датчик протечки"""
     device_hub.devices["leak"].set_wet(wet)
     return {"ok": True}
-<<<<<<< HEAD
-=======
 
 @router.post(
     "/{name}/emergency",
@@ -97,4 +98,3 @@ async def set_leak(wet: bool):
 async def set_emergency(name: str, on: bool = Query(description="true - авария, false - сброс")):
     device_hub.set_emergency(name, on)
     return {"ok": True}
->>>>>>> dev
