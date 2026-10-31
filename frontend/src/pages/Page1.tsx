@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import { listDeviceTemplates, type DeviceTemplate } from '../api/devices'
+import { getDeviceDetails, listDeviceTemplates, type DeviceDetails, type DeviceTemplate } from '../api/devices'
 import type { LayoutContext } from '../components/Layout/Layout'
 
 type DeviceType = string
@@ -45,6 +45,8 @@ export default function Page1() {
   const [selectedTemplate, setSelectedTemplate] = useState<DeviceTemplate | null>(null)
   const [deviceName, setDeviceName] = useState('')
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
+  const [deviceDetails, setDeviceDetails] = useState<DeviceDetails | null>(null)
+  const [detailsError, setDetailsError] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [templatesError, setTemplatesError] = useState('')
   const [activeRoom, setActiveRoom] = useState<number | 'all'>('all')
@@ -82,6 +84,33 @@ export default function Page1() {
     setIsRoomOpen(false)
   }
 
+  const loadDeviceDetails = (device: Device) => {
+    setDeviceDetails(null)
+    setDetailsError('')
+    getDeviceDetails(device.template.key)
+      .then(setDeviceDetails)
+      .catch(() => setDetailsError('Не удалось загрузить данные устройства'))
+  }
+
+  const openDeviceDetails = (device: Device) => {
+    setSelectedDevice(device)
+    loadDeviceDetails(device)
+  }
+
+  const closeDeviceDetails = () => {
+    setSelectedDevice(null)
+    setDeviceDetails(null)
+    setDetailsError('')
+  }
+
+  const formatSignalValue = (signal: NonNullable<DeviceDetails>['declaration'][number]) => {
+    if (!deviceDetails) return ''
+    const value = deviceDetails.state[signal.name]
+    const label = signal.layout?.[String(value)]
+    if (label) return label
+    return signal.measure ? `${String(value)} ${signal.measure}` : String(value)
+  }
+
   return (
     <section className="panel panel--with-add devices-panel" aria-label="Устройства">
       <nav className="room-tabs" aria-label="Комнаты устройств">
@@ -99,7 +128,7 @@ export default function Page1() {
               <div className="device-card__icon"><DeviceIcon type={device.template.key} /></div>
               <h2 className="device-card__name">{device.name}</h2>
               <DeviceState type={device.template.key} />
-              <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => setSelectedDevice(device)}>↗</button>
+              <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↗</button>
             </article>
           ))}
         </div>
@@ -153,12 +182,28 @@ export default function Page1() {
       )}
 
       {selectedDevice && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setSelectedDevice(null)}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeDeviceDetails}>
           <section className="device-modal device-modal--details" role="dialog" aria-modal="true" aria-labelledby="device-details-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="device-modal__header">
               <h1 id="device-details-title">{selectedDevice.name}</h1>
-              <button type="button" className="device-modal__close" aria-label="Закрыть" onClick={() => setSelectedDevice(null)}>×</button>
+              <div className="device-modal__actions">
+                <button type="button" className="device-modal__refresh" aria-label="Обновить данные" onClick={() => loadDeviceDetails(selectedDevice)}>↻</button>
+                <button type="button" className="device-modal__close" aria-label="Закрыть" onClick={closeDeviceDetails}>×</button>
+              </div>
             </div>
+            {deviceDetails && <p className="device-modal__subtitle">{deviceDetails.title}</p>}
+            {detailsError && <p className="device-modal__error">{detailsError}</p>}
+            {!deviceDetails && !detailsError && <p className="device-modal__loading">Загружаем данные…</p>}
+            {deviceDetails && (
+              <dl className="device-details">
+                {deviceDetails.declaration.filter((signal) => signal.name !== 'fw').map((signal) => (
+                  <div className="device-details__row" key={signal.name}>
+                    <dt>{signal.title}</dt>
+                    <dd>{formatSignalValue(signal)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </section>
         </div>
       )}
