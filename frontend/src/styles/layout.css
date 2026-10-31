@@ -714,6 +714,32 @@
   box-shadow: var(--shadow-item);
 }
 
+.room-card__name {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  max-width: calc(100% - 82px);
+}
+
+.room-card__count {
+  position: absolute;
+  top: 48px;
+  left: 18px;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.room-card__image {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  object-position: right top;
+}
+
 .room-card__details {
   position: absolute;
   right: 12px;
