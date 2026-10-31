@@ -39,14 +39,14 @@ class UserCRUD:
         user: User,
         *,
         first_name: str | None = None,
-        last_name: str | None = None,
+        second_name: str | None = None,
     ) -> User:
         """Обновляет переданные поля профиля пользователя."""
 
         if first_name is not None:
             user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
+        if second_name is not None:
+            user.second_name = second_name
         await self.session.flush()
         await self.session.refresh(user)
         return user

@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 const NETWORK_ERROR = 'Не удалось связаться с сервером'
 
-type Method = 'GET' | 'POST'
+type Method = 'GET' | 'POST' | 'PATCH'
 
 /**токен, ошибки сети, 401 и разбор ответа*/
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
@@ -55,4 +55,8 @@ export function apiGet<T>(path: string): Promise<T> {
 
 export function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return request<T>('POST', path, body)
+}
+
+export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>('PATCH', path, body)
 }
