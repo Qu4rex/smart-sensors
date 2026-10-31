@@ -15,7 +15,7 @@ from src.crud.revoked_token import RevokedTokenCRUD
 from src.crud.user import UserCRUD
 from src.models.user import User
 from src.schemas.token import Token
-from src.schemas.user import UserCreate
+from src.schemas.user import UserCreate, UserUpdate
 
 # Хеш-пустышка: проверяем пароль и для несуществующего пользователя,
 # чтобы по времени ответа нельзя было понять, существует ли логин.
@@ -29,6 +29,7 @@ class AuthService:
         self.session = session
         self.users = users
         self.revoked = revoked
+
 
     async def register_user(self, data: UserCreate) -> User:
         """Регистрирует нового пользователя в системе."""
@@ -49,6 +50,7 @@ class AuthService:
 
         return user
 
+
     async def authenticate_user(self, login: str, password: str) -> User:
         """Аутентифицирует пользователя по login и паролю."""
 
@@ -66,6 +68,19 @@ class AuthService:
 
         return user
 
+
+    async def update_profile(self, user: User, data: UserUpdate) -> User:
+        """Обновляет имя/фамилию текущего пользователя."""
+
+        updated = await self.users.update_profile(
+            user,
+            first_name=data.first_name,
+            last_name=data.last_name,
+        )
+        await self.session.commit()
+        return updated
+
+
     def create_access_token_for_user(self, user: User, remember: bool = False) -> Token:
         """Создаёт JWT токен для аутентифицированного пользователя.
 
@@ -75,6 +90,7 @@ class AuthService:
         expires_delta = timedelta(days=settings.REMEMBER_ME_EXPIRE_DAYS) if remember else None
         access_token = create_access_token(user_id=user.id, expires_delta=expires_delta)
         return Token(access_token=access_token, token_type="bearer")
+
 
     async def logout(self, payload: dict) -> None:
         """Отзывает токен: добавляет его jti в чёрный список и чистит просроченные записи."""

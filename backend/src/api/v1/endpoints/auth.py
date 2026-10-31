@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from src.api.deps import AuthServiceDep, CurrentUserDep, TokenPayloadDep
 from src.schemas.token import Token
-from src.schemas.user import LoginRequest, UserCreate, UserRead
+from src.schemas.user import LoginRequest, UserCreate, UserRead, UserUpdate
 
 router = APIRouter()
 
@@ -40,6 +40,13 @@ async def read_me(current_user: CurrentUserDep):
     """Возвращает данные пользователя, которому принадлежит токен."""
 
     return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+async def update_me(data: UserUpdate, current_user: CurrentUserDep, service: AuthServiceDep,):
+    """Обновляет имя и/или фамилию текущего пользователя."""
+
+    return await service.update_profile(current_user, data)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
