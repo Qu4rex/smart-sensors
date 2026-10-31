@@ -7,10 +7,10 @@ import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import Page1 from './pages/Page1'
 import Page2 from './pages/Page2'
-import Page3 from './pages/Page3'
 import Page4 from './pages/Page4'
 import RegisterPage from './pages/RegisterPage'
 import SettingsPage from './pages/SettingsPage'
+import ScenariosPage from './pages/ScenariosPage'
 
 export default function App() {
   return (
@@ -28,7 +28,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/page1" element={<Page1 />} />
           <Route path="/page2" element={<Page2 />} />
-          <Route path="/page3" element={<Page3 />} />
+          <Route path="/scenarios" element={<ScenariosPage />} />
           <Route path="/page4" element={<Page4 />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />

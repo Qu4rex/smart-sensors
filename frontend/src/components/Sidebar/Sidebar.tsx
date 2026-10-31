@@ -11,7 +11,7 @@ import LogoutDialog from './LogoutDialog'
 const pages = [
   { to: '/page1', label: 'Страница 1', icon: <FileIcon /> },
   { to: '/page2', label: 'Страница 2', icon: <FileIcon /> },
-  { to: '/page3', label: 'Страница 3', icon: <FileIcon /> },
+  { to: '/scenarios', label: 'Сценарии', icon: <FileIcon /> },
   { to: '/page4', label: 'Страница 4', icon: <FileIcon /> },
 ]
 
