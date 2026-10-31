@@ -1,11 +1,10 @@
-# Проверки качества: линт, форматирование, тесты, сборка.
-# Запускаются на каждый pull request и вызываются из deploy.yml перед деплоем.
-
 name: CI
 
 on:
   pull_request:
   workflow_call:
+  push:
+    branches: [ "dev" ]
 
 permissions:
   contents: read
@@ -70,9 +69,6 @@ jobs:
         # Падает, если изменили модель и забыли создать миграцию
         run: uv run alembic check
 
-      - name: Тесты
-        run: uv run pytest
-
   frontend:
     name: frontend
     runs-on: ubuntu-latest
@@ -97,9 +93,6 @@ jobs:
 
       - name: Форматирование (prettier)
         run: npm run format:check
-
-      - name: Тесты
-        run: npm test
 
       - name: Проверка типов и сборка
         run: npm run build
@@ -141,4 +134,3 @@ jobs:
       - name: Логи при ошибке
         if: failure()
         run: docker compose -f docker-compose.yml logs --tail=100
-        

@@ -1,7 +1,7 @@
 import asyncio
 import operator
 import time
-
+from datetime import datetime
 from src.services import device_hub
 
 OPS = {"==": operator.eq, "!=": operator.ne, ">": operator.gt,
@@ -22,6 +22,15 @@ def add_rule(rule):
     return rule
 
 
+def update_rule(rule_id, data):
+    if rule_id not in rules:
+        return None
+    rule = {"id": rule_id, **data}
+    rules[rule_id] = rule
+    _active.pop(rule_id, None)
+    return rule
+
+
 def delete_rule(rule_id):
     """ удаляет правило по id """
     rules.pop(rule_id, None)
@@ -32,7 +41,8 @@ def run_actions(rule):
     """ отправляет все команды из then и пишет срабатывание в журнал """
     for action in rule["then"]:
         device_hub.send_command(action["device"], action["signal"], action["value"])
-    log.append({"time": time.strftime("%H:%M:%S"), "rule": rule["name"], "then": rule["then"]})
+    now = datetime.now()
+    log.append({"time": now.strftime("%Y-%m-%d %H:%M:%S"), "rule": rule["name"], "then": rule["then"]})
     del log[:-50]
 
 
