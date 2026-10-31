@@ -107,8 +107,8 @@
   position: relative;
   min-height: 180px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  justify-content: space-between;
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: 20px;
@@ -139,11 +139,34 @@
 }
 
 .device-card__name {
-  margin: 22px 0 auto;
-  padding-right: 20px;
+  margin: 0;
+  padding-right: 96px;
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.3;
+}
+
+.device-card__content {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 0 12px;
+}
+
+.device-card__content > :last-child {
+  margin-top: auto;
+}
+
+.device-card__image {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+  object-position: right top;
 }
 
 .device-card__switch {

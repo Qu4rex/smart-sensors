@@ -2,6 +2,14 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 import { createStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, type DeviceDetails, type DeviceTemplate } from '../api/devices'
+import barrierImage from '../assets/barrier.png'
+import counterImage from '../assets/counter.png'
+import elevatorImage from '../assets/elevator.png'
+import fireImage from '../assets/fire.png'
+import leakImage from '../assets/leak.png'
+import lightImage from '../assets/light.png'
+import thermostatImage from '../assets/thermostat.png'
+import ventilationImage from '../assets/ventilation.png'
 import type { LayoutContext } from '../components/Layout/Layout'
 
 type DeviceType = string
@@ -11,6 +19,17 @@ type Device = {
   name: string
   templateKey: string
   room: string | null
+}
+
+const deviceImages: Record<string, string> = {
+  barrier: barrierImage,
+  thermostat: thermostatImage,
+  counter: counterImage,
+  light: lightImage,
+  leak: leakImage,
+  fire: fireImage,
+  ventilation: ventilationImage,
+  elevator: elevatorImage,
 }
 
 function DeviceIcon({ type }: { type: DeviceType }) {
@@ -185,9 +204,15 @@ export default function Page1() {
             if (!template) return null
             return (
               <article className="device-card" key={device.id}>
-                <div className="device-card__icon"><DeviceIcon type={template.key} /></div>
-                <h2 className="device-card__name">{device.name}</h2>
-                <DeviceState type={template.key} state={template.state} />
+                <div className="device-card__content">
+                  <h2 className="device-card__name">{device.name}</h2>
+                  <DeviceState type={template.key} state={template.state} />
+                </div>
+                {deviceImages[template.key] ? (
+                  <img className="device-card__image" src={deviceImages[template.key]} alt="" />
+                ) : (
+                  <div className="device-card__icon"><DeviceIcon type={template.key} /></div>
+                )}
                 <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↘</button>
               </article>
             )
