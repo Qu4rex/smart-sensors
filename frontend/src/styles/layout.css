@@ -66,25 +66,24 @@
 }
 
 .room-tabs__item--active {
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-item);
+  background: var(--color-accent);
+  color: #fff;
 }
 
 .room-tabs__add {
   width: 40px;
   padding: 0;
   border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--color-border);
+  color: var(--color-muted);
   font-size: 1.45rem;
   line-height: 1;
   box-shadow: var(--shadow-item);
 }
 
 .room-tabs__add:hover {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-hover);
+  color: var(--color-text);
 }
 
 .devices-panel__empty {
