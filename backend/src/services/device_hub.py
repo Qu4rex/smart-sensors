@@ -41,3 +41,28 @@ def send_command(name, signal, value):
             signal: value,
         }]
     })
+
+def set_emergency(name, on):
+    """ имитация аварии устройства: on=True включает, on=False сбрасывает """
+    device = devices[name]
+    if name == "leak":
+        device.set_wet(on)
+    elif name == "fire":
+        device.set_smoke(100 if on else 0)
+    elif name == "barrier":
+        device.set_obstacle(on)
+        device.set_value("alarm", 1 if on else 0)
+    elif name == "thermostat":
+        device.set_fault(on)
+    elif name == "elevator":
+        if device.signals["emergency"].value != int(on):
+            device.on_command("emergency_btn", 1)  # кнопка переключает аварию
+    elif name == "counter":
+        device.set_value("online", 0 if on else 1)  # пропала связь
+    elif name == "ventilation":
+        device.set_value("co2", 1900 if on else 450)
+        device.set_value("pm25", 40 if on else 5)
+    elif name == "light":
+        send_command(name, "lamp", int(on))  # аварийное освещение
+        if on:
+            send_command(name, "brightness", 100)

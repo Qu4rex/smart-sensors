@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 #from pydantic import BaseModel
 
 from src.services import device_hub
@@ -29,4 +29,13 @@ async def send_command(name: str, cmd: Command):
 async def set_leak(wet: bool):
     """намочить (true) или высушить (false) датчик протечки"""
     device_hub.devices["leak"].set_wet(wet)
+    return {"ok": True}
+
+@router.post(
+    "/{name}/emergency",
+    summary="emergency set",
+    description="включает (on=true) или сбрасывает (on=false) аварийное состояние устройства",
+)
+async def set_emergency(name: str, on: bool = Query(description="true - авария, false - сброс")):
+    device_hub.set_emergency(name, on)
     return {"ok": True}
