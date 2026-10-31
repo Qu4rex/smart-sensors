@@ -252,6 +252,12 @@
   font-weight: 500;
 }
 
+.device-modal__error {
+  margin: 16px 0 0;
+  color: var(--color-error);
+  font-size: 0.9rem;
+}
+
 .device-modal__field input {
   height: 46px;
   padding: 0 12px;
