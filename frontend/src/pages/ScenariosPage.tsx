@@ -336,7 +336,7 @@ export default function ScenariosPage() {
   }
 
   async function deleteRule(rule: Rule) {
-    if (!window.confirm(`Удалить сценарий «${rule.name}»?`)) return
+    if (!window.confirm(`Удалить сценарий "${rule.name}"?`)) return
 
     setDeletingId(rule.id)
     setListError('')
@@ -364,7 +364,7 @@ export default function ScenariosPage() {
     event.preventDefault()
 
     if (actionDevice === 'notification') {
-      setFormError('Действие «Уведомление» пока не реализовано')
+      setFormError('Действие Уведомление пока не реализовано')
       return
     }
 
