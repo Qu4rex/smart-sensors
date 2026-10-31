@@ -5,6 +5,7 @@ type DevicesResponse = Record<string, { title: string; state: Record<string, unk
 export type DeviceTemplate = {
   key: string
   title: string
+  state: Record<string, unknown>
 }
 
 type SignalDeclaration = {
@@ -22,7 +23,7 @@ export type DeviceDetails = {
 
 export async function listDeviceTemplates(): Promise<DeviceTemplate[]> {
   const devices = await apiGet<DevicesResponse>('/devices')
-  return Object.entries(devices).map(([key, device]) => ({ key, title: device.title }))
+  return Object.entries(devices).map(([key, device]) => ({ key, title: device.title, state: device.state }))
 }
 
 export function getDeviceDetails(key: string): Promise<DeviceDetails> {

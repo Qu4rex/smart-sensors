@@ -182,6 +182,10 @@
   font-weight: 600;
 }
 
+.device-card__status--alert {
+  color: var(--color-error);
+}
+
 .device-card__details {
   position: absolute;
   right: 12px;
@@ -415,13 +419,14 @@
 .device-toast {
   position: fixed;
   z-index: 60;
-  right: clamp(1rem, 3vw, 2rem);
+  left: 50%;
   bottom: clamp(1rem, 3vw, 2rem);
   padding: 14px 18px;
   border-radius: var(--radius-sm);
   background: var(--color-text);
   color: var(--color-surface);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transform: translateX(-50%);
 }
 
 .rooms-panel {

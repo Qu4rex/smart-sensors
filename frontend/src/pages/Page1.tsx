@@ -29,11 +29,24 @@ function DeviceIcon({ type }: { type: DeviceType }) {
   return <svg className="device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[type] ?? <rect x="4" y="4" width="16" height="16" rx="4" />}</svg>
 }
 
-function DeviceState({ type }: { type: DeviceType }) {
-  if (type === 'barrier' || type === 'light') return <span className="device-card__switch"><span /></span>
-  if (type === 'thermostat') return <span className="device-card__value">— <small>°C</small></span>
-  if (type === 'counter') return <span className="device-card__value">0000</span>
-  if (type === 'leak') return <span className="device-card__status">Отлично</span>
+function DeviceState({ type, state }: { type: DeviceType; state: Record<string, unknown> }) {
+  const value = (name: string) => state[name]
+  const number = (name: string): number | string => {
+    const signalValue = value(name)
+    return typeof signalValue === 'number' ? signalValue : '—'
+  }
+
+  if (type === 'barrier') {
+    const states: Record<number, string> = { 0: 'Закрыто', 1: 'Открывается', 2: 'Открыто', 3: 'Закрывается', 4: 'Удержание' }
+    return <span className="device-card__status">{states[Number(value('state'))] ?? '—'}</span>
+  }
+  if (type === 'light') return <span className="device-card__status">{Number(value('lamp')) === 1 ? 'Включен' : 'Выключен'}</span>
+  if (type === 'thermostat') return <span className="device-card__value">{number('temperature')} <small>°C</small></span>
+  if (type === 'counter') return <span className="device-card__value">{number('total')}</span>
+  if (type === 'leak') return <span className={Number(value('leak')) === 1 ? 'device-card__status device-card__status--alert' : 'device-card__status'}>{Number(value('leak')) === 1 ? 'Протечка' : 'Отлично'}</span>
+  if (type === 'elevator') return <span className="device-card__value">{number('floor_current')} <small>этаж</small></span>
+  if (type === 'ventilation') return <span className="device-card__value">{number('co2')} <small>ppm</small></span>
+  if (type === 'fire') return <span className="device-card__value">{number('smoke')} <small>%</small></span>
   return <span className="device-card__value">—</span>
 }
 
@@ -54,9 +67,18 @@ export default function Page1() {
   const [roomName, setRoomName] = useState('')
 
   useEffect(() => {
-    listDeviceTemplates()
-      .then(setDeviceOptions)
-      .catch(() => setTemplatesError('Не удалось загрузить шаблоны устройств'))
+    const loadTemplates = () => {
+      listDeviceTemplates()
+        .then((templates) => {
+          setDeviceOptions(templates)
+          setTemplatesError('')
+        })
+        .catch(() => setTemplatesError('Не удалось загрузить шаблоны устройств'))
+    }
+
+    loadTemplates()
+    const interval = window.setInterval(loadTemplates, 3000)
+    return () => window.clearInterval(interval)
   }, [])
 
   const openAddDialog = () => {
@@ -123,14 +145,17 @@ export default function Page1() {
 
       {devices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
-          {devices.map((device) => (
-            <article className="device-card" key={device.id}>
-              <div className="device-card__icon"><DeviceIcon type={device.template.key} /></div>
-              <h2 className="device-card__name">{device.name}</h2>
-              <DeviceState type={device.template.key} />
-              <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↘</button>
-            </article>
-          ))}
+          {devices.map((device) => {
+            const template = deviceOptions.find(({ key }) => key === device.template.key) ?? device.template
+            return (
+              <article className="device-card" key={device.id}>
+                <div className="device-card__icon"><DeviceIcon type={template.key} /></div>
+                <h2 className="device-card__name">{device.name}</h2>
+                <DeviceState type={template.key} state={template.state} />
+                <button className="device-card__details" type="button" aria-label={`Открыть ${device.name}`} onClick={() => openDeviceDetails(device)}>↘</button>
+              </article>
+            )
+          })}
         </div>
       )}
 
