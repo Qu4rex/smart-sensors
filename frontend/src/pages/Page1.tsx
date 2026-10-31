@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import { getDeviceDetails, listDeviceTemplates, type DeviceDetails, type DeviceTemplate } from '../api/devices'
+import { createStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, type DeviceDetails, type DeviceTemplate } from '../api/devices'
 import type { LayoutContext } from '../components/Layout/Layout'
 
 type DeviceType = string
@@ -9,7 +9,8 @@ type DeviceType = string
 type Device = {
   id: number
   name: string
-  template: DeviceTemplate
+  templateKey: string
+  room: string | null
 }
 
 function DeviceIcon({ type }: { type: DeviceType }) {
@@ -57,6 +58,7 @@ export default function Page1() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<DeviceTemplate | null>(null)
   const [deviceName, setDeviceName] = useState('')
+  const [deviceRoom, setDeviceRoom] = useState('')
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [deviceDetails, setDeviceDetails] = useState<DeviceDetails | null>(null)
   const [detailsError, setDetailsError] = useState('')
@@ -81,16 +83,40 @@ export default function Page1() {
     return () => window.clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    listStoredDevices()
+      .then((storedDevices) => {
+        setDevices(storedDevices.map((device) => ({
+          id: device.id,
+          name: device.name,
+          templateKey: device.device_type,
+          room: device.room,
+        })))
+      })
+      .catch(() => undefined)
+  }, [])
+
   const openAddDialog = () => {
     setSelectedTemplate(null)
     setDeviceName('')
+    setDeviceRoom('')
     setIsAddOpen(true)
   }
 
-  const addDevice = (event: FormEvent) => {
+  const addDevice = async (event: FormEvent) => {
     event.preventDefault()
     if (!selectedTemplate || !deviceName.trim()) return
-    setDevices((current) => [...current, { id: Date.now(), template: selectedTemplate, name: deviceName.trim() }])
+    const storedDevice = await createStoredDevice({
+      name: deviceName.trim(),
+      device_type: selectedTemplate.key,
+      room: deviceRoom || null,
+    })
+    setDevices((current) => [...current, {
+      id: storedDevice.id,
+      name: storedDevice.name,
+      templateKey: storedDevice.device_type,
+      room: storedDevice.room,
+    }])
     setIsAddOpen(false)
     setShowToast(true)
     window.setTimeout(() => setShowToast(false), 3000)
@@ -109,7 +135,7 @@ export default function Page1() {
   const loadDeviceDetails = (device: Device) => {
     setDeviceDetails(null)
     setDetailsError('')
-    getDeviceDetails(device.template.key)
+    getDeviceDetails(device.templateKey)
       .then(setDeviceDetails)
       .catch(() => setDetailsError('Не удалось загрузить данные устройства'))
   }
@@ -146,7 +172,8 @@ export default function Page1() {
       {devices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
           {devices.map((device) => {
-            const template = deviceOptions.find(({ key }) => key === device.template.key) ?? device.template
+            const template = deviceOptions.find(({ key }) => key === device.templateKey)
+            if (!template) return null
             return (
               <article className="device-card" key={device.id}>
                 <div className="device-card__icon"><DeviceIcon type={template.key} /></div>
@@ -181,6 +208,13 @@ export default function Page1() {
               <label className="device-modal__field">
                 <span>Название устройства</span>
                 <input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} placeholder="Например, лампа в спальне" maxLength={64} autoFocus />
+              </label>
+              <label className="device-modal__field">
+                <span>Комната</span>
+                <select value={deviceRoom} onChange={(event) => setDeviceRoom(event.target.value)}>
+                  <option value="">Не выбрана</option>
+                  {rooms.map((room) => <option key={room.id} value={room.name}>{room.name}</option>)}
+                </select>
               </label>
               <button className="device-modal__submit" type="submit" disabled={!selectedTemplate || !deviceName.trim()}>Добавить</button>
             </form>

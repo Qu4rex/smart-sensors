@@ -381,7 +381,8 @@
   font-size: 0.9rem;
 }
 
-.device-modal__field input {
+.device-modal__field input,
+.device-modal__field select {
   height: 46px;
   padding: 0 12px;
   border: 1px solid var(--color-border);
@@ -392,7 +393,8 @@
   font: inherit;
 }
 
-.device-modal__field input:focus {
+.device-modal__field input:focus,
+.device-modal__field select:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(0, 192, 201, 0.2);
 }
