@@ -13,6 +13,21 @@ export const ProfileIcon = () => (
   </Icon>
 )
 
+export const EmulationIcon = () => (
+  <Icon size={22}>
+  <path stroke-linecap="round" stroke-linejoin="round" d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" />
+
+  </Icon>
+)
+
+export const DeviceIcon = () => (
+  <Icon size={22}>
+  <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125Z" />
+
+
+  </Icon>
+)
+
 export const SettingsIcon = () => (
   <Icon size={22}>
     <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />

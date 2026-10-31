@@ -5,13 +5,13 @@ import { logoutRequest } from '../../api/auth'
 import logoOnDark from '../../assets/logo-light.svg'
 import logoOnLight from '../../assets/logo-dark.svg'
 import { clearToken } from '../../utils/token'
-import { FileIcon, LogoutIcon, ProfileIcon, SettingsIcon, SidebarIcon } from './icons'
+import { FileIcon, LogoutIcon, ProfileIcon, SettingsIcon, SidebarIcon, EmulationIcon, DeviceIcon } from './icons'
 import LogoutDialog from './LogoutDialog'
 
 const pages = [
-  { to: '/page1', label: 'Страница 1', icon: <FileIcon /> },
-  { to: '/page2', label: 'Страница 2', icon: <FileIcon /> },
-  { to: '/page3', label: 'Страница 3', icon: <FileIcon /> },
+  { to: '/page1', label: 'Устройства', icon: <DeviceIcon /> },
+  { to: '/page2', label: 'Эмуляция', icon: <EmulationIcon /> },
+  { to: '/page3', label: 'Сценарии', icon: <FileIcon /> },
   { to: '/page4', label: 'Страница 4', icon: <FileIcon /> },
 ]
 
