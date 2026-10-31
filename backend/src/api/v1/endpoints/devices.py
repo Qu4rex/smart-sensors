@@ -1,16 +1,11 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+#from pydantic import BaseModel
 
 from src.services import device_hub
-
+from src.schemas.devices import Command
 router = APIRouter(prefix="/devices")
 
 
-class Command(BaseModel):
-    signal: str
-    value: int | float | str
-
-    
 @router.get("")
 async def list_devices():
     return {name: {"title": d.title, "state": device_hub.get_state(name)}
