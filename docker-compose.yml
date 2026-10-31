@@ -5,8 +5,6 @@ services:
       - ./backend/.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -18,6 +16,47 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - hackathon_network
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Сертификаты: fullchain.pem и privkey.pem (см. docs/ssl.md)
+      - ./frontend/nginx/ssl/:/etc/nginx/ssl/:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - hackathon_network
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   postgres_data:
