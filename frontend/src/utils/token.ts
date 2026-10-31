@@ -1,6 +1,5 @@
 const TOKEN_KEY = 'access_token'
 
-/** Сохраняет токен: в localStorage при «Запомнить меня», иначе в sessionStorage (до закрытия вкладки). */
 export function saveToken(token: string, remember: boolean) {
   clearToken()
   const storage = remember ? localStorage : sessionStorage
@@ -16,7 +15,7 @@ export function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY)
 }
 
-/** Проверяет только срок действия из payload. Подпись проверяет сервер. */
+/**проверяет только срок действия из payload */
 export function isTokenValid(token: string | null): boolean {
   if (!token) return false
   try {

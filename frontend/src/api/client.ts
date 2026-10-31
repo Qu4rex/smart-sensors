@@ -1,13 +1,11 @@
 import { clearToken, getToken } from '../utils/token'
-
-// `||`, а не `??`: при сборке без переменной Docker подставляет пустую строку.
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 const NETWORK_ERROR = 'Не удалось связаться с сервером'
 
 type Method = 'GET' | 'POST'
 
-/** Единая точка для всех запросов к API: токен, ошибки сети, 401 и разбор ответа. */
+/**токен, ошибки сети, 401 и разбор ответа*/
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const token = getToken()
   const headers: Record<string, string> = {}
