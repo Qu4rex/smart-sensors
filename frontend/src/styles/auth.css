@@ -137,6 +137,43 @@
   color: var(--color-error);
 }
 
+.sms-code__inputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sms-code__input {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 54px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  outline: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.sms-code__input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(0, 192, 201, 0.2);
+}
+
+.sms-code__inputs--error .sms-code__input {
+  border-color: var(--color-error);
+}
+
+.sms-code__inputs--error .sms-code__input:focus {
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.2);
+}
+
 .auth__error {
   color: var(--color-error);
 }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { registerRequest } from '../api/auth'
@@ -7,11 +7,14 @@ import Field from '../components/Auth/Field'
 import { LockIcon, UserIcon } from '../components/Auth/icons'
 import { formatPhone, validateConfirm, validatePassword, validatePhone } from '../utils/validation'
 
+const SMS_CODE_LENGTH = 4
+
 export default function RegisterPage() {
   const navigate = useNavigate()
 
   const [phone, setPhone] = useState('')
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState<string[]>(() => Array(SMS_CODE_LENGTH).fill(''))
+  const codeInputs = useRef<Array<HTMLInputElement | null>>([])
   const [step, setStep] = useState<'phone' | 'code' | 'password'>('phone')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -22,6 +25,48 @@ export default function RegisterPage() {
   const phoneError = validatePhone(phone)
   const passwordError = validatePassword(password)
   const confirmError = validateConfirm(password, confirm)
+
+  const focusCodeInput = (index: number) => codeInputs.current[index]?.focus()
+
+  const updateCode = (index: number, value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, SMS_CODE_LENGTH - index).split('')
+    setCode((current) => {
+      const next = [...current]
+      if (digits.length === 0) {
+        next[index] = ''
+      } else {
+        digits.forEach((digit, digitIndex) => {
+          next[index + digitIndex] = digit
+        })
+      }
+      return next
+    })
+    setServerError('')
+
+    if (digits.length > 0) focusCodeInput(Math.min(index + digits.length, SMS_CODE_LENGTH - 1))
+  }
+
+  const handleCodeKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key === 'Backspace' && !code[index] && index > 0) {
+      event.preventDefault()
+      setCode((current) => {
+        const next = [...current]
+        next[index - 1] = ''
+        return next
+      })
+      focusCodeInput(index - 1)
+    }
+
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault()
+      focusCodeInput(index - 1)
+    }
+
+    if (event.key === 'ArrowRight' && index < SMS_CODE_LENGTH - 1) {
+      event.preventDefault()
+      focusCodeInput(index + 1)
+    }
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -34,7 +79,7 @@ export default function RegisterPage() {
     }
 
     if (step === 'code') {
-      if (code !== '1234') {
+      if (code.join('') !== '1234') {
         setServerError('Неверный код из СМС')
         return
       }
@@ -79,18 +124,31 @@ export default function RegisterPage() {
         )}
 
         {step === 'code' && (
-          <Field
-            label="Код из СМС"
-            icon={<UserIcon />}
-            value={code}
-            onChange={(value) => setCode(value.replace(/\D/g, '').slice(0, 4))}
-            error={code && code !== '1234' ? 'Неверный код из СМС' : ''}
-            submitted={submitted}
-            placeholder="Введите код из СМС"
-            inputMode="numeric"
-            maxLength={4}
-            autoComplete="one-time-code"
-          />
+          <div className="sms-code">
+            <label className="field__label" htmlFor="sms-code-0">
+              Код из СМС
+            </label>
+            <div className={serverError ? 'sms-code__inputs sms-code__inputs--error' : 'sms-code__inputs'}>
+              {code.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(element) => {
+                    codeInputs.current[index] = element
+                  }}
+                  id={`sms-code-${index}`}
+                  className="sms-code__input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                  aria-label={`Цифра ${index + 1} кода из СМС`}
+                  value={digit}
+                  maxLength={SMS_CODE_LENGTH}
+                  onChange={(event) => updateCode(index, event.target.value)}
+                  onKeyDown={(event) => handleCodeKeyDown(event, index)}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         {step === 'password' && (

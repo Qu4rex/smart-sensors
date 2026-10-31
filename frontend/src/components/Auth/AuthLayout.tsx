@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
 
         <h1 className="auth__title">Добро пожаловать</h1>
-        <p className="auth__text">Система умного дома</p>
+        <p className="auth__text">В систему умного дома Ujin</p>
 
         {children}
       </main>
