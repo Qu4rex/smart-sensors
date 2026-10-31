@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatPhone, validateConfirm, validatePassword, validatePhone } from './validation'
+import { formatPhone, toBackendLogin, validateConfirm, validatePassword, validatePhone } from './validation'
 
 describe('validatePhone', () => {
   it('принимает номер в маске', () => {
     expect(validatePhone('+7 (999) 123-45-67')).toBe('')
     expect(formatPhone('89991234567')).toBe('+7 (999) 123-45-67')
+    expect(toBackendLogin('+7 (999) 123-45-67')).toBe('+79991234567')
   })
 
   it.each([

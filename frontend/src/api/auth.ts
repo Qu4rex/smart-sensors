@@ -1,13 +1,13 @@
 import { apiGet, apiPost } from './client'
 
 export type LoginPayload = {
-  phone: string
+  login: string
   password: string
   remember: boolean
 }
 
 export type RegisterPayload = {
-  phone: string
+  login: string
   password: string
 }
 
@@ -18,7 +18,7 @@ export type TokenResponse = {
 
 export type UserInfo = {
   id: number
-  username: string
+  login: string
   is_active: boolean
   created_at: string
 }

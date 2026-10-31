@@ -5,7 +5,7 @@ import { registerRequest } from '../api/auth'
 import AuthLayout from '../components/Auth/AuthLayout'
 import Field from '../components/Auth/Field'
 import { LockIcon, UserIcon } from '../components/Auth/icons'
-import { formatPhone, validateConfirm, validatePassword, validatePhone } from '../utils/validation'
+import { formatPhone, toBackendLogin, validateConfirm, validatePassword, validatePhone } from '../utils/validation'
 
 const SMS_CODE_LENGTH = 4
 
@@ -95,7 +95,7 @@ export default function RegisterPage() {
     setServerError('')
 
     try {
-      await registerRequest({ phone, password })
+      await registerRequest({ login: toBackendLogin(phone), password })
       navigate('/login', { replace: true })
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Не удалось зарегистрироваться')

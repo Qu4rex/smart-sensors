@@ -22,6 +22,11 @@ export function formatPhone(value: string): string {
   return result
 }
 
+/** Преобразует номер из маски интерфейса в формат, который ожидает backend. */
+export function toBackendLogin(value: string): string {
+  return `+${phoneDigits(value)}`
+}
+
 export function validatePhone(value: string): string {
   if (!value || phoneDigits(value).length < 2) return 'Введите номер телефона'
   if (!/^[+()\s\d-]+$/.test(value)) return 'Введите номер в формате +7 (999) 999-99-99'

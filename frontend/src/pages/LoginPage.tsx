@@ -6,7 +6,7 @@ import AuthLayout from '../components/Auth/AuthLayout'
 import Field from '../components/Auth/Field'
 import { LockIcon, UserIcon } from '../components/Auth/icons'
 import { saveToken } from '../utils/token'
-import { formatPhone, validatePassword, validatePhone } from '../utils/validation'
+import { formatPhone, toBackendLogin, validatePassword, validatePhone } from '../utils/validation'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -30,7 +30,7 @@ export default function LoginPage() {
     setServerError('')
 
     try {
-      const { access_token } = await loginRequest({ phone, password, remember })
+      const { access_token } = await loginRequest({ login: toBackendLogin(phone), password, remember })
       if (!access_token) throw new Error('Сервер не вернул токен')
       saveToken(access_token, remember)
       navigate('/page1', { replace: true })
