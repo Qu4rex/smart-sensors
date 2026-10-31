@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client'
+import { apiGet, apiPatch, apiPost } from './client'
 
 type DevicesResponse = Record<string, { title: string; state: Record<string, unknown> }>
 
@@ -45,4 +45,8 @@ export function listStoredDevices(): Promise<StoredDevice[]> {
 
 export function createStoredDevice(data: Pick<StoredDevice, 'name' | 'device_type' | 'room'>): Promise<StoredDevice> {
   return apiPost<StoredDevice>('/devices/stored', data)
+}
+
+export function updateStoredDeviceName(id: number, name: string): Promise<StoredDevice> {
+  return apiPatch<StoredDevice>(`/devices/stored/${id}`, { name })
 }

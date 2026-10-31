@@ -1,12 +1,12 @@
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from src.services import device_hub
 from src.api.deps import CurrentUserDep, SessionDep
 from src.models.user_device import UserDevice
-from src.schemas.devices import Command, StoredDeviceCreate, StoredDeviceRead
+from src.schemas.devices import Command, StoredDeviceCreate, StoredDeviceRead, StoredDeviceUpdate
 router = APIRouter(prefix="/devices")
 
 
@@ -36,6 +36,22 @@ async def create_stored_device(
         owner_id=current_user.id,
     )
     session.add(device)
+    await session.commit()
+    await session.refresh(device)
+    return device
+
+
+@router.patch("/stored/{device_id}", response_model=StoredDeviceRead)
+async def update_stored_device(
+    device_id: int, data: StoredDeviceUpdate, current_user: CurrentUserDep, session: SessionDep
+):
+    result = await session.execute(
+        select(UserDevice).where(UserDevice.id == device_id, UserDevice.owner_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(status_code=404, detail="Устройство не найдено")
+    device.name = data.name.strip()
     await session.commit()
     await session.refresh(device)
     return device

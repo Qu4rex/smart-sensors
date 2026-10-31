@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import { createStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, type DeviceDetails, type DeviceTemplate } from '../api/devices'
+import { createStoredDevice, getDeviceDetails, listDeviceTemplates, listStoredDevices, updateStoredDeviceName, type DeviceDetails, type DeviceTemplate } from '../api/devices'
 import barrierImage from '../assets/barrier.png'
 import counterImage from '../assets/counter.png'
 import elevatorImage from '../assets/elevator.png'
@@ -81,6 +81,9 @@ export default function Page1() {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [deviceDetails, setDeviceDetails] = useState<DeviceDetails | null>(null)
   const [detailsError, setDetailsError] = useState('')
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName] = useState('')
+  const [isSavingName, setIsSavingName] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [templatesError, setTemplatesError] = useState('')
   const [activeRoom, setActiveRoom] = useState<number | 'all'>('all')
@@ -165,6 +168,8 @@ export default function Page1() {
 
   const openDeviceDetails = (device: Device) => {
     setSelectedDevice(device)
+    setEditedName(device.name)
+    setIsEditingName(false)
     loadDeviceDetails(device)
   }
 
@@ -172,6 +177,24 @@ export default function Page1() {
     setSelectedDevice(null)
     setDeviceDetails(null)
     setDetailsError('')
+    setIsEditingName(false)
+  }
+
+  const saveDeviceName = async () => {
+    if (!selectedDevice || !editedName.trim()) return
+    setIsSavingName(true)
+    setDetailsError('')
+    try {
+      const updatedDevice = await updateStoredDeviceName(selectedDevice.id, editedName.trim())
+      const updated = { ...selectedDevice, name: updatedDevice.name }
+      setDevices((current) => current.map((device) => device.id === updated.id ? updated : device))
+      setSelectedDevice(updated)
+      setIsEditingName(false)
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось сохранить название')
+    } finally {
+      setIsSavingName(false)
+    }
   }
 
   const selectedRoom = activeRoom === 'all' ? null : rooms.find((room) => room.id === activeRoom)
@@ -280,8 +303,17 @@ export default function Page1() {
         <div className="modal-backdrop" role="presentation" onMouseDown={closeDeviceDetails}>
           <section className="device-modal device-modal--details" role="dialog" aria-modal="true" aria-labelledby="device-details-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="device-modal__header">
-              <h1 id="device-details-title">{selectedDevice.name}</h1>
+              {isEditingName ? (
+                <input id="device-details-title" className="device-modal__name-input" value={editedName} onChange={(event) => setEditedName(event.target.value)} maxLength={64} aria-label="Название устройства" autoFocus />
+              ) : (
+                <h1 id="device-details-title">{selectedDevice.name}</h1>
+              )}
               <div className="device-modal__actions">
+                <button type="button" className="device-modal__refresh" aria-label={isEditingName ? 'Сохранить название' : 'Изменить название'} onClick={() => isEditingName ? saveDeviceName() : setIsEditingName(true)} disabled={isSavingName}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {isEditingName ? <path d="m4.5 12.75 6 6 9-13.5" /> : <path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />}
+                  </svg>
+                </button>
                 <button type="button" className="device-modal__refresh" aria-label="Обновить данные" onClick={() => loadDeviceDetails(selectedDevice)}>↻</button>
                 <button type="button" className="device-modal__close" aria-label="Закрыть" onClick={closeDeviceDetails}>×</button>
               </div>

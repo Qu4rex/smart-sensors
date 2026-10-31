@@ -14,6 +14,10 @@ class StoredDeviceCreate(BaseModel):
     room: str | None = Field(default=None, max_length=64)
 
 
+class StoredDeviceUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
 class StoredDeviceRead(StoredDeviceCreate):
     id: int
     serial: str

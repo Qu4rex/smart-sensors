@@ -318,8 +318,27 @@
 }
 
 .device-modal__header h1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin: 0;
   font-size: 1.3rem;
+}
+
+.device-modal__name-input {
+  min-width: 0;
+  flex: 1;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
 .device-modal__actions {
@@ -356,9 +375,19 @@
   cursor: pointer;
 }
 
+.device-modal__refresh svg {
+  width: 19px;
+  height: 19px;
+}
+
 .device-modal__refresh:hover,
 .device-modal__close:hover {
   background: var(--color-border);
+}
+
+.device-modal__refresh:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .device-picker {
