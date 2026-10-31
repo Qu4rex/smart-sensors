@@ -10,7 +10,7 @@ PASSWORD_RE = re.compile(r"^[!-~]{8,18}$")
 class UserBase(BaseModel):
     """Базовая модель пользователя."""
 
-    login: int
+    login: str
 
 
 class UserCreate(BaseModel):
@@ -24,7 +24,7 @@ class UserCreate(BaseModel):
 
     @field_validator("login")
     @classmethod
-    def validate_login(cls, value: int) -> int:
+    def validate_login(cls, value: str) -> str:
         if not LOGIN_RE.fullmatch(value):
             raise ValueError(
                 "Логин: в формате номера телефона, "
@@ -43,7 +43,7 @@ class UserCreate(BaseModel):
 class LoginRequest(BaseModel):
     """Тело запроса на вход (JSON)."""
 
-    username: str = Field(min_length=1, max_length=64)
+    login: str = Field(min_length=10, max_length=64)
     # Верхняя граница защищает от очень длинных строк при хешировании
     password: str = Field(min_length=1, max_length=128)
     remember: bool = False  # True = запомнить на REMEMBER_ME_EXPIRE_DAYS дней
