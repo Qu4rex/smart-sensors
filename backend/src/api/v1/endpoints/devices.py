@@ -9,6 +9,8 @@ router = APIRouter(prefix="/devices")
 class Command(BaseModel):
     signal: str
     value: int | float | str
+
+    
 @router.get("")
 async def list_devices():
     return {name: {"title": d.title, "state": device_hub.get_state(name)}
