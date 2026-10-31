@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useOutletContext } from 'react-router-dom'
 
 import { listDeviceTemplates, type DeviceTemplate } from '../api/devices'
+import type { LayoutContext } from '../components/Layout/Layout'
 
 type DeviceType = string
 
@@ -36,6 +38,7 @@ function DeviceState({ type }: { type: DeviceType }) {
 }
 
 export default function Page1() {
+  const { rooms, addRoom } = useOutletContext<LayoutContext>()
   const [devices, setDevices] = useState<Device[]>([])
   const [deviceOptions, setDeviceOptions] = useState<DeviceTemplate[]>([])
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -44,6 +47,9 @@ export default function Page1() {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [templatesError, setTemplatesError] = useState('')
+  const [activeRoom, setActiveRoom] = useState<number | 'all'>('all')
+  const [isRoomOpen, setIsRoomOpen] = useState(false)
+  const [roomName, setRoomName] = useState('')
 
   useEffect(() => {
     listDeviceTemplates()
@@ -66,8 +72,26 @@ export default function Page1() {
     window.setTimeout(() => setShowToast(false), 3000)
   }
 
+  const createRoom = (event: FormEvent) => {
+    event.preventDefault()
+    const name = roomName.trim()
+    if (!name) return
+    const room = addRoom(name)
+    setActiveRoom(room.id)
+    setRoomName('')
+    setIsRoomOpen(false)
+  }
+
   return (
     <section className="panel panel--with-add devices-panel" aria-label="Устройства">
+      <nav className="room-tabs" aria-label="Комнаты устройств">
+        <button className={activeRoom === 'all' ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} type="button" onClick={() => setActiveRoom('all')}>Все устройства</button>
+        {rooms.map((room) => (
+          <button className={activeRoom === room.id ? 'room-tabs__item room-tabs__item--active' : 'room-tabs__item'} key={room.id} type="button" onClick={() => setActiveRoom(room.id)}>{room.name}</button>
+        ))}
+        <button className="room-tabs__add" type="button" aria-label="Добавить комнату" onClick={() => setIsRoomOpen(true)}>+</button>
+      </nav>
+
       {devices.length === 0 ? <p className="panel__text devices-panel__empty">Нет добавленных устройств</p> : (
         <div className="device-grid">
           {devices.map((device) => (
@@ -105,6 +129,24 @@ export default function Page1() {
                 <input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} placeholder="Например, лампа в спальне" maxLength={64} autoFocus />
               </label>
               <button className="device-modal__submit" type="submit" disabled={!selectedTemplate || !deviceName.trim()}>Добавить</button>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {isRoomOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setIsRoomOpen(false)}>
+          <section className="device-modal device-modal--compact" role="dialog" aria-modal="true" aria-labelledby="add-room-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="device-modal__header">
+              <h1 id="add-room-title">Добавить комнату</h1>
+              <button type="button" className="device-modal__close" aria-label="Закрыть" onClick={() => setIsRoomOpen(false)}>×</button>
+            </div>
+            <form onSubmit={createRoom}>
+              <label className="device-modal__field device-modal__field--first">
+                <span>Название комнаты</span>
+                <input value={roomName} onChange={(event) => setRoomName(event.target.value)} placeholder="Например, гостиная" maxLength={64} autoFocus />
+              </label>
+              <button className="device-modal__submit" type="submit" disabled={!roomName.trim()}>Добавить</button>
             </form>
           </section>
         </div>

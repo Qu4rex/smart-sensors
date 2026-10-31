@@ -11,15 +11,23 @@ export type UserProfile = {
   secondName: string
 }
 
+export type Room = {
+  id: number
+  name: string
+}
+
 export type LayoutContext = {
   profile: UserProfile | null
   setProfile: (profile: UserProfile) => void
+  rooms: Room[]
+  addRoom: (name: string) => Room
 }
 
 export default function Layout() {
   // на маленьких экранах панель по умолчанию свернута
   const [collapsed, setCollapsed] = useState(() => window.matchMedia(SMALL_SCREEN).matches)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [rooms, setRooms] = useState<Room[]>([])
 
   useEffect(() => {
     meRequest()
@@ -31,6 +39,12 @@ export default function Layout() {
 
   const collapseOnSmallScreen = () => {
     if (window.matchMedia(SMALL_SCREEN).matches) setCollapsed(true)
+  }
+
+  const addRoom = (name: string) => {
+    const room = { id: Date.now(), name }
+    setRooms((current) => [...current, room])
+    return room
   }
 
   return (
@@ -45,7 +59,7 @@ export default function Layout() {
       {!collapsed && <div className="backdrop" onClick={() => setCollapsed(true)} />}
 
       <main className="content">
-        <Outlet context={{ profile, setProfile } satisfies LayoutContext} />
+        <Outlet context={{ profile, setProfile, rooms, addRoom } satisfies LayoutContext} />
       </main>
     </div>
   )

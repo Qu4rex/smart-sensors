@@ -36,6 +36,57 @@
   padding: clamp(1rem, 3vw, 2rem);
 }
 
+.room-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 18px;
+  background: var(--color-hover);
+}
+
+.room-tabs__item,
+.room-tabs__add {
+  height: 40px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.room-tabs__item:hover {
+  color: var(--color-text);
+}
+
+.room-tabs__item--active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-item);
+}
+
+.room-tabs__add {
+  width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.45rem;
+  line-height: 1;
+  box-shadow: var(--shadow-item);
+}
+
+.room-tabs__add:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
 .devices-panel__empty {
   position: absolute;
   top: 50%;
@@ -175,6 +226,10 @@
   min-height: 180px;
 }
 
+.device-modal--compact {
+  width: min(440px, 100%);
+}
+
 .device-modal__header {
   display: flex;
   align-items: center;
@@ -252,6 +307,10 @@
   font-weight: 500;
 }
 
+.device-modal__field--first {
+  margin-top: 0;
+}
+
 .device-modal__error {
   margin: 16px 0 0;
   color: var(--color-error);
@@ -303,6 +362,40 @@
   background: var(--color-text);
   color: var(--color-surface);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.rooms-panel {
+  position: relative;
+  min-height: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.rooms-panel__empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.room-card {
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  font-size: 1.05rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-item);
 }
 
 .panel__add {
