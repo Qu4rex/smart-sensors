@@ -236,3 +236,4 @@ stats.html
 .eslintcache
 
 frontend/nginx/ssl/
+.vscode/
