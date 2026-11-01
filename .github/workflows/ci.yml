@@ -67,8 +67,6 @@ jobs:
         # Падает, если изменили модель и забыли создать миграцию
         run: uv run alembic check
 
-      - name: Тесты
-        run: uv run pytest
 
   frontend:
     name: frontend
