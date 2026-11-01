@@ -315,12 +315,49 @@
 .thermostat-history h2 {
   margin: 0 0 10px;
   font-size: 0.95rem;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 .thermostat-trend--details {
-  height: 86px;
+  height: 66px;
   color: var(--color-accent);
+}
+
+.metric-chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 86px;
+}
+
+.metric-chart__y {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2px 0 18px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.metric-chart__body {
+  min-width: 0;
+}
+
+.metric-chart__x {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.metric-chart__axis,
+.metric-chart__tick {
+  stroke: var(--color-muted);
+  stroke-width: 0.35;
 }
 
 .thermostat-trend__empty {
@@ -993,6 +1030,21 @@
   .devices-panel {
     padding: 12px;
     overflow: hidden;
+  }
+
+  .rooms-panel {
+    padding: 12px 8px;
+    overflow: hidden;
+  }
+
+  .rooms-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .room-card {
+    width: 100%;
+    min-width: 0;
   }
 
   .devices-panel__greeting {
