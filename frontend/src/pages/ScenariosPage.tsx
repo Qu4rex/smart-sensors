@@ -1,5 +1,4 @@
-
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { apiDelete, apiGet, apiPost, apiPut } from '../api/client'
 
@@ -35,6 +34,15 @@ type DeviceDetails = {
   declaration: DeviceSignal[]
 }
 
+type LoadStatus = 'loading' | 'ok' | 'error'
+
+/* строка действия в форме */
+type ActionDraft = {
+  key: number
+  device: string
+  signal: string
+  value: string
+}
 
 const deviceNames: Record<string, string> = {
   leak: 'датчик протечки',
@@ -56,22 +64,128 @@ const operatorNames: Record<string, string> = {
   '<=': 'меньше или равно',
 }
 
+const NOTICE_MS = 3500
+const NOTICE_FADE_MS = 300
+
+/* устройства, которыми можно управлять в блоке «Тогда» */
+const actionDeviceIds = ['light', 'ventilation', 'barrier', 'thermostat', 'elevator']
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 function getDeviceName(device: string) {
+  if (device === 'notification') return 'уведомление'
   return deviceNames[device] ?? device
 }
 
-function getSignalName(
-  device: string,
-  signal: string,
-  signalTitles: Record<string, string>,
-) {
-  const title = signalTitles[`${device}:${signal}`] ?? signal
+function pluralizeScenarios(count: number) {
+  const lastTwo = count % 100
+  const last = count % 10
 
-  return title.charAt(0).toLowerCase() + title.slice(1)
+  if (lastTwo >= 11 && lastTwo <= 14) return `${count} сценариев`
+  if (last === 1) return `${count} сценарий`
+  if (last >= 2 && last <= 4) return `${count} сценария`
+  return `${count} сценариев`
 }
 
-function formatConditionValue(value: number | string) {
-  return String(value)
+function parseValue(value: string) {
+  const trimmed = value.trim()
+
+  if (trimmed === '') {
+    throw new Error('Значение не может быть пустым')
+  }
+
+  const number = Number(trimmed)
+
+  return Number.isFinite(number) ? number : trimmed
+}
+
+/* строка действия в карточке сценария */
+function ScenarioRow({ device, text }: { device: string; text: string }) {
+  const label = capitalize(getDeviceName(device))
+
+  return (
+    <div className="scenario-row">
+      <span className="scenario-avatar" aria-hidden="true">
+        {label.charAt(0)}
+      </span>
+
+      <div className="scenario-row__text">
+        <span className="scenario-row__label">{label}</span>
+        <span className="scenario-row__value">{text}</span>
+      </div>
+    </div>
+  )
+}
+
+type SignalSelectProps = {
+  device: string
+  mode: 'r' | 'w'
+  value: string
+  declarations: Record<string, DeviceSignal[]>
+  status: Record<string, LoadStatus>
+  onChange: (signal: string) => void
+  onRetry: (device: string) => void
+}
+
+function SignalSelect({
+  device,
+  mode,
+  value,
+  declarations,
+  status,
+  onChange,
+  onRetry,
+}: SignalSelectProps) {
+  const state = device ? status[device] : undefined
+
+  const signals = (declarations[device] ?? []).filter((signal) =>
+    signal.control.includes(mode),
+  )
+
+  const disabled =
+    !device ||
+    device === 'notification' ||
+    state === 'loading' ||
+    state === 'error'
+
+  let placeholder = 'Выберите сигнал'
+
+  if (!device) placeholder = 'Сначала выберите устройство'
+  else if (device === 'notification') placeholder = 'Не требуется'
+  else if (state === 'loading') placeholder = 'Загружаем сигналы...'
+  else if (state === 'error') placeholder = 'Не удалось загрузить'
+
+  return (
+    <>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        required={device !== 'notification'}
+        aria-label="Сигнал"
+      >
+        <option value="">{placeholder}</option>
+
+        {signals.map((signal) => (
+          <option key={signal.name} value={signal.name}>
+            {signal.title}
+          </option>
+        ))}
+      </select>
+
+      {state === 'error' && (
+        <button
+          type="button"
+          className="scenarios__link-button scenarios__link-button--small"
+          onClick={() => onRetry(device)}
+        >
+          Повторить загрузку
+        </button>
+      )}
+    </>
+  )
 }
 
 export default function ScenariosPage() {
@@ -81,14 +195,22 @@ export default function ScenariosPage() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [formSuccess, setFormSuccess] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [listError, setListError] = useState('')
 
-  /* сигналы, которые нужно выбрать после загрузки списка (ред) */
-  const pendingTriggerSignal = useRef<string | null>(null)
-  const pendingActionSignal = useRef<string | null>(null)
+  /* уведомления */
+  const [notice, setNotice] = useState<{ text: string; kind: 'success' | 'error' } | null>(null)
+  const [noticeOpen, setNoticeOpen] = useState(false)
+  const noticeTimers = useRef<number[]>([])
+
+  /* поля формы */
+  const keyCounter = useRef(0)
+  const sectionRef = useRef<HTMLElement>(null)
+
+  function emptyAction(): ActionDraft {
+    keyCounter.current += 1
+    return { key: keyCounter.current, device: '', signal: '', value: '1' }
+  }
 
   const [name, setName] = useState('')
   const [triggerDevice, setTriggerDevice] = useState('')
@@ -96,60 +218,42 @@ export default function ScenariosPage() {
   const [operator, setOperator] = useState('==')
   const [triggerValue, setTriggerValue] = useState('1')
 
-  const [actionDevice, setActionDevice] = useState('')
-  const [actionSignal, setActionSignal] = useState('')
-  const [actionValue, setActionValue] = useState('1')
+  const [actions, setActions] = useState<ActionDraft[]>(() => [
+    { key: 0, device: '', signal: '', value: '1' },
+  ])
 
-  /* сигналы создание */
-  const [triggerSignals, setTriggerSignals] = useState<DeviceSignal[]>([])
-  const [actionSignals, setActionSignals] = useState<DeviceSignal[]>([])
+  /* описания сигналов устройств */
+  const [declarations, setDeclarations] = useState<Record<string, DeviceSignal[]>>({})
+  const [declStatus, setDeclStatus] = useState<Record<string, LoadStatus>>({})
+  const requested = useRef<Set<string>>(new Set())
 
-  const [triggerSignalsLoading, setTriggerSignalsLoading] = useState(false)
-  const [actionSignalsLoading, setActionSignalsLoading] = useState(false)
+  const loadDeclaration = useCallback(async (device: string, force = false) => {
+  if (!device || device === 'notification') return
+  if (!force && requested.current.has(device)) return
 
-  const [triggerSignalsError, setTriggerSignalsError] = useState('')
-  const [actionSignalsError, setActionSignalsError] = useState('')
+  requested.current.add(device)
+  setDeclStatus((previous) => ({ ...previous, [device]: 'loading' }))
 
-  const [signalTitles, setSignalTitles] = useState<Record<string, string>>({})
+  try {
+    const data = await apiGet<DeviceDetails>(`/devices/${encodeURIComponent(device)}`)
 
-  useEffect(() => {
-  let cancelled = false
+    setDeclarations((previous) => ({
+      ...previous,
+      [device]: data.declaration ?? [],
+    }))
 
-  async function loadSignalTitles() {
-    const devices = Object.keys(deviceNames)
-
-    const results = await Promise.all(
-      devices.map(async (device) => {
-        try {
-          const data = await apiGet<DeviceDetails>(
-            `/devices/${encodeURIComponent(device)}`,
-          )
-
-          return (data.declaration ?? []).map((signal) => ({
-            key: `${device}:${signal.name}`,
-            title: signal.title,
-          }))
-        } catch {
-          return []
-        }
-      }),
-    )
-
-    if (!cancelled) {
-      setSignalTitles(
-        Object.fromEntries(
-          results.flat().map(({ key, title }) => [key, title]),
-        ),
-      )
-    }
-  }
-
-  void loadSignalTitles()
-
-  return () => {
-    cancelled = true
+    setDeclStatus((previous) => ({ ...previous, [device]: 'ok' }))
+  } catch {
+    requested.current.delete(device)
+    setDeclStatus((previous) => ({ ...previous, [device]: 'error' }))
   }
 }, [])
+
+useEffect(() => {
+  Object.keys(deviceNames).forEach((device) => {
+    void loadDeclaration(device)
+  })
+}, [loadDeclaration])
 
   useEffect(() => {
     let cancelled = false
@@ -183,26 +287,8 @@ export default function ScenariosPage() {
     }
   }, [])
 
-  /* Загружаем сигналы устройства для условия */
   useEffect(() => {
-    setTriggerSignals([])
-    setTriggerSignal('')
-    setTriggerSignalsError('')
-
-    if (!triggerDevice) {
-      setTriggerSignalsLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    async function loadSignals() {
-      setTriggerSignalsLoading(true)
-
-      try {
-        const data = await apiGet<DeviceDetails>(
-          `/devices/${encodeURIComponent(triggerDevice)}`,
-        )
+  const timers = noticeTimers.current
 
         if (!cancelled) {
           const available = (data.declaration ?? []).filter((signal) =>
@@ -250,15 +336,13 @@ export default function ScenariosPage() {
       return
     }
 
-    let cancelled = false
+function showNotice(text: string, kind: 'success' | 'error' = 'success') {
+  const timers = noticeTimers.current
 
-    async function loadSignals() {
-      setActionSignalsLoading(true)
+  timers.forEach((timer) => window.clearTimeout(timer))
+  timers.length = 0
 
-      try {
-        const data = await apiGet<DeviceDetails>(
-          `/devices/${encodeURIComponent(actionDevice)}`,
-        )
+  setNotice({ text, kind })
 
         if (!cancelled) {
           const available = (data.declaration ?? []).filter((signal) =>
@@ -266,33 +350,14 @@ export default function ScenariosPage() {
           )
           setActionSignals(available)
 
-          const pending = pendingActionSignal.current
-          pendingActionSignal.current = null
-          if (pending && available.some((signal) => signal.name === pending)) {
-            setActionSignal(pending)
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setActionSignalsError(
-            err instanceof Error
-              ? err.message
-              : 'Не удалось загрузить сигналы',
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setActionSignalsLoading(false)
-        }
-      }
-    }
+function scrollToTop() {
+  sectionRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' })
+}
 
-    void loadSignals()
+function signalTitle(device: string, signal: string) {
+  return declarations[device]?.find((item) => item.name === signal)?.title ?? signal
+}
 
-    return () => {
-      cancelled = true
-    }
-  }, [actionDevice])
 
   function resetForm() {
     setEditingId(null)
@@ -301,61 +366,91 @@ export default function ScenariosPage() {
     setTriggerSignal('')
     setOperator('==')
     setTriggerValue('1')
-    setActionDevice('')
-    setActionSignal('')
-    setActionValue('1')
+    setActions([emptyAction()])
     setFormError('')
-    pendingTriggerSignal.current = null
-    pendingActionSignal.current = null
+  }
+
+  function openCreateForm() {
+    resetForm()
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    resetForm()
+    setShowForm(false)
   }
 
   function startEdit(rule: Rule) {
-    const action = rule.then[0]
-
     setFormError('')
-    setFormSuccess('')
-    setListError('')
     setEditingId(rule.id)
     setName(rule.name)
+    setTriggerDevice(rule.when.device)
+    setTriggerSignal(rule.when.signal)
     setOperator(rule.when.op)
     setTriggerValue(String(rule.when.value))
-    setActionValue(action ? String(action.value) : '1')
+    setActions(
+      rule.then.length > 0
+        ? rule.then.map((action) => {
+            keyCounter.current += 1
+            return {
+              key: keyCounter.current,
+              device: action.device,
+              signal: action.signal,
+              value: String(action.value),
+            }
+          })
+        : [emptyAction()],
+    )
 
-    pendingTriggerSignal.current =
-      rule.when.device === triggerDevice ? null : rule.when.signal
-    pendingActionSignal.current =
-      action && action.device !== actionDevice ? action.signal : null
-
-    setTriggerDevice(rule.when.device)
-    setActionDevice(action?.device ?? '')
-
-    if (rule.when.device === triggerDevice) setTriggerSignal(rule.when.signal)
-    if (action && action.device === actionDevice) setActionSignal(action.signal)
+    void loadDeclaration(rule.when.device)
+    rule.then.forEach((action) => void loadDeclaration(action.device))
 
     setShowForm(true)
-    window.scrollTo?.({ top: 0, behavior: 'smooth' })
+    scrollToTop()
+  }
+
+  function changeTriggerDevice(device: string) {
+    setTriggerDevice(device)
+    setTriggerSignal('')
+    void loadDeclaration(device)
+  }
+
+  function updateAction(key: number, patch: Partial<ActionDraft>) {
+    setActions((previous) =>
+      previous.map((action) => (action.key === key ? { ...action, ...patch } : action)),
+    )
+  }
+
+  function changeActionDevice(key: number, device: string) {
+    updateAction(key, { device, signal: '' })
+    void loadDeclaration(device)
+  }
+
+  function addAction() {
+    setActions((previous) => [...previous, emptyAction()])
+  }
+
+  function removeAction(key: number) {
+    setActions((previous) =>
+      previous.length > 1 ? previous.filter((action) => action.key !== key) : previous,
+    )
   }
 
   async function deleteRule(rule: Rule) {
-    if (!window.confirm(`Удалить сценарий "${rule.name}"?`)) return
+    if (!window.confirm(`Удалить сценарий «${rule.name}»?`)) return
 
     setDeletingId(rule.id)
-    setListError('')
-    setFormSuccess('')
 
     try {
       await apiDelete(`/rules/${rule.id}`)
       setRules((previous) => previous.filter((item) => item.id !== rule.id))
 
       if (editingId === rule.id) {
-        resetForm()
-        setShowForm(false)
+        closeForm()
       }
-      setFormSuccess('Сценарий удалён')
+      showNotice('Сценарий успешно удалён')
     } catch (err) {
-      setListError(
-        err instanceof Error ? err.message : 'Не удалось удалить сценарий',
-      )
+      showNotice(err instanceof Error ? err.message : 'Не удалось удалить сценарий', 'error')
     } finally {
       setDeletingId(null)
     }
@@ -364,26 +459,13 @@ export default function ScenariosPage() {
   async function saveRule(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (actionDevice === 'notification') {
-      setFormError('Действие Уведомление пока не реализовано')
+    if (actions.some((action) => action.device === 'notification')) {
+      setFormError('Действие «Уведомление» пока не реализовано')
       return
     }
 
     setSaving(true)
     setFormError('')
-    setFormSuccess('')
-
-    const parseValue = (value: string) => {
-      const trimmed = value.trim()
-
-      if (trimmed === '') {
-        throw new Error('Значение не может быть пустым')
-      }
-
-      const number = Number(trimmed)
-
-      return Number.isFinite(number) ? number : trimmed
-    }
 
     try {
       const payload = {
@@ -394,320 +476,261 @@ export default function ScenariosPage() {
           op: operator,
           value: parseValue(triggerValue),
         },
-        then: [
-          {
-            device: actionDevice,
-            signal: actionSignal.trim(),
-            value: parseValue(actionValue),
-          },
-        ],
+        then: actions.map((action) => ({
+          device: action.device,
+          signal: action.signal.trim(),
+          value: parseValue(action.value),
+        })),
       }
 
       if (editingId === null) {
         const created = await apiPost<Rule>('/rules', payload)
         setRules((previous) => [...previous, created])
-        setFormSuccess('Сценарий успешно создан')
+        showNotice('Сценарий успешно создан')
       } else {
         const updated = await apiPut<Rule>(`/rules/${editingId}`, payload)
         setRules((previous) =>
           previous.map((item) => (item.id === updated.id ? updated : item)),
         )
-        setFormSuccess('Сценарий успешно обновлён')
+        showNotice('Сценарий успешно обновлён')
       }
 
-      resetForm()
-      setShowForm(false)
+      closeForm()
+      scrollToTop()
     } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : 'Не удалось сохранить сценарий',
-      )
+      setFormError(err instanceof Error ? err.message : 'Не удалось сохранить сценарий')
     } finally {
       setSaving(false)
     }
   }
 
+
   return (
-    <section className="panel scenarios">
+    <section className="panel scenarios" ref={sectionRef}>
       <header className="scenarios__header">
         <div>
           <h1 className="panel__title">Сценарии автоматизации</h1>
-          <p className="panel__text">
-            Правила взаимодействия между устройствами
-          </p>
+          <p className="panel__text">Правила взаимодействия между устройствами</p>
         </div>
-
-        <span className="scenarios__count">
-          {rules.length} сценариев
-        </span>
+        <span className="scenarios__count">{pluralizeScenarios(rules.length)}</span>
       </header>
 
-<div className="scenarios__toolbar">
-  <button
-    type="button"
-    onClick={() => {
-      if (showForm) {
-        resetForm()
-        setShowForm(false)
-      } else {
-        resetForm()
-        setShowForm(true)
-      }
-      setFormSuccess('')
-      setListError('')
-    }}
-  >
-    {showForm ? 'Отмена' : '+ Создать сценарий'}
-  </button>
-</div>
+      <div className={`scenarios__notice-slot${noticeOpen ? ' is-open' : ''}`}>
+        <div className="scenarios__notice-clip">
+          {notice && (
+            <div className={`notice notice--${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
+              {notice.text}
+            </div>
+          )}
+        </div>
+      </div>
 
-{formSuccess && <p role="status">{formSuccess}</p>}
+      <div className="scenarios__toolbar">
+        {showForm ? (
+          <button type="button" className="scenarios__button" onClick={closeForm}>
+            Отмена
+          </button>
+        ) : (
+          <button type="button" className="scenarios__button scenarios__button--accent" onClick={openCreateForm}>
+            + Создать сценарий
+          </button>
+        )}
+      </div>
 
-{listError && (
-  <p className="scenarios__message--error" role="alert">
-    {listError}
-  </p>
-)}
+      {showForm && (
+        <form className="scenario-form" onSubmit={saveRule}>
+          <h2 className="scenario-form__title">
+            {editingId === null ? 'Новый сценарий' : 'Редактирование сценария'}
+          </h2>
 
-{showForm && (
-  <form className="scenarios__form" onSubmit={saveRule}>
-    <h2>{editingId === null ? 'Новый сценарий' : 'Редактирование сценария'}</h2>
+          <section>
+            <h3 className="scenario-section__title">Название сценария</h3>
+            <div className="scenario-block scenario-block--padded">
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                maxLength={100}
+                placeholder="Например, Свет при протечке"
+                aria-label="Название сценария"
+              />
+            </div>
+          </section>
 
-    <label>
-      Название
-      <input
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        required
-        maxLength={100}
-        placeholder="Например, Свет при протечке"
-      />
-    </label>
+          <section>
+            <h3 className="scenario-section__title">Если</h3>
+            <div className="scenario-block">
+              <div className="scenario-row">
+                <span className="scenario-avatar" aria-hidden="true">
+                  {triggerDevice ? capitalize(getDeviceName(triggerDevice)).charAt(0) : '?'}
+                </span>
+                <div className="scenario-fields">
+                  <label className="scenario-field">
+                    <span className="scenario-field__caption">Устройство</span>
+                    <select value={triggerDevice} onChange={(event) => changeTriggerDevice(event.target.value)} required>
+                      <option value="">Выберите устройство</option>
+                      {Object.keys(deviceNames).map((device) => (
+                        <option key={device} value={device}>{capitalize(deviceNames[device])}</option>
+                      ))}
+                    </select>
+                  </label>
 
-    <h3>Когда</h3>
+                  <label className="scenario-field">
+                    <span className="scenario-field__caption">Сигнал</span>
+                    <SignalSelect
+                      device={triggerDevice}
+                      mode="r"
+                      value={triggerSignal}
+                      declarations={declarations}
+                      status={declStatus}
+                      onChange={setTriggerSignal}
+                      onRetry={(device) => void loadDeclaration(device, true)}
+                    />
+                  </label>
 
-    <label>
-      Устройство
-      <select
-        value={triggerDevice}
-        onChange={(event) => setTriggerDevice(event.target.value)}
-      >
-        <option value="">Выберите устройство</option>
-        <option value="leak">Датчик протечки</option>
-        <option value="barrier">Шлагбаум</option>
-        <option value="thermostat">Термостат</option>
-        <option value="counter">Счётчик электричества</option>
-        <option value="light">Освещение</option>
-        <option value="fire">Пожарный датчик</option>
-        <option value="ventilation">Вентиляция</option>
-        <option value="elevator">Лифт</option>
-      </select>
-    </label>
+                  <label className="scenario-field">
+                    <span className="scenario-field__caption">Оператор</span>
+                    <select value={operator} onChange={(event) => setOperator(event.target.value)}>
+                      {Object.entries(operatorNames).map(([op, title]) => (
+                        <option key={op} value={op}>{capitalize(title)}</option>
+                      ))}
+                    </select>
+                  </label>
 
-    <label>
-      Сигнал
-      <select
-        value={triggerSignal}
-        onChange={(event) => setTriggerSignal(event.target.value)}
-        disabled={!triggerDevice || triggerSignalsLoading || !!triggerSignalsError}
-        required
-      >
-        <option value="">
-          {!triggerDevice
-            ? 'Сначала выберите устройство'
-            : triggerSignalsLoading
-              ? 'Загружаем сигналы...'
-              : 'Выберите сигнал'}
-        </option>
-          
-        {triggerSignals.map((signal) => (
-          <option key={signal.name} value={signal.name}>
-            {signal.title}
-          </option>
-        ))}
-      </select>
+                  <label className="scenario-field">
+                    <span className="scenario-field__caption">Значение</span>
+                    <input value={triggerValue} onChange={(event) => setTriggerValue(event.target.value)} required />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
 
-  {triggerSignalsError && (
-    <span role="alert" className="scenarios__message--error">
-      {triggerSignalsError}
-    </span>
-  )}
-</label>
-    <label>
-      Оператор
-      <select
-        value={operator}
-        onChange={(event) => setOperator(event.target.value)}
-      >
-        <option value="==">Равно</option>
-        <option value="!=">Не равно</option>
-        <option value=">">Больше</option>
-        <option value="<">Меньше</option>
-        <option value=">=">Больше или равно</option>
-        <option value="<=">Меньше или равно</option>
-      </select>
-    </label>
+          <section>
+            <h3 className="scenario-section__title">Тогда</h3>
+            <div className="scenario-block">
+              {actions.map((action) => (
+                <div className="scenario-row" key={action.key}>
+                  <span className="scenario-avatar" aria-hidden="true">
+                    {action.device ? capitalize(getDeviceName(action.device)).charAt(0) : '?'}
+                  </span>
+                  <div className="scenario-fields">
+                    <label className="scenario-field">
+                      <span className="scenario-field__caption">Устройство</span>
+                      <select value={action.device} onChange={(event) => changeActionDevice(action.key, event.target.value)} required>
+                        <option value="">Выберите устройство</option>
+                        {actionDeviceIds.map((device) => (
+                          <option key={device} value={device}>{capitalize(deviceNames[device])}</option>
+                        ))}
+                        <option value="notification">Уведомление</option>
+                      </select>
+                    </label>
 
-    <label>
-      Значение условия
-      <input
-        value={triggerValue}
-        onChange={(event) => setTriggerValue(event.target.value)}
-        required
-      />
-    </label>
+                    <label className="scenario-field">
+                      <span className="scenario-field__caption">Сигнал</span>
+                      <SignalSelect
+                        device={action.device}
+                        mode="w"
+                        value={action.signal}
+                        declarations={declarations}
+                        status={declStatus}
+                        onChange={(signal) => updateAction(action.key, { signal })}
+                        onRetry={(device) => void loadDeclaration(device, true)}
+                      />
+                    </label>
 
-    <h3>Тогда выполнить</h3>
+                    <label className="scenario-field">
+                      <span className="scenario-field__caption">Значение</span>
+                      <input value={action.value} onChange={(event) => updateAction(action.key, { value: event.target.value })} required />
+                    </label>
+                  </div>
 
-    <label>
-      Действие 
-      <select
-        value={actionDevice}
-        onChange={(event) => setActionDevice(event.target.value)}
-        required
-      >
-        <option value="">Выберите действие</option>
-        <option value="light">Освещение</option>
-        <option value="ventilation">Вентиляция</option>
-        <option value="barrier">Шлагбаум</option>
-        <option value="thermostat">Термостат</option>
-        <option value="elevator">Лифт</option>
-        <option value="notification">Уведомление</option>
-      </select>
-    </label>
+                  {actions.length > 1 && (
+                    <button type="button" className="scenario-row__remove" onClick={() => removeAction(action.key)} aria-label="Убрать действие" title="Убрать действие">
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
 
-    <label>
-      Сигнал действия
-      <select
-        value={actionSignal}
-        onChange={(event) => setActionSignal(event.target.value)}
-        disabled={
-          !actionDevice ||
-          actionDevice === 'notification' ||
-          actionSignalsLoading ||
-          !!actionSignalsError
-        }
-        required
-      >
+            <button type="button" className="scenarios__link-button" onClick={addAction}>
+              <span aria-hidden="true">+</span> Добавить действие
+            </button>
+          </section>
 
-        <option value="">
-          {!actionDevice
-            ? 'Сначала выберите устройство'
-            : actionSignalsLoading
-              ? 'Загружаем сигналы...'
-              : 'Выберите сигнал'}
-        </option>
+          {formError && <p className="notice notice--error scenario-form__error" role="alert">{formError}</p>}
 
-        {actionSignals.map((signal) => (
-          <option key={signal.name} value={signal.name}>
-            {signal.title}
-          </option>
-        ))}
-      </select>
-
-      {actionSignalsError && (
-        <span role="alert" className="scenarios__message--error">
-          {actionSignalsError}
-        </span>
+          <button type="submit" className="scenarios__button scenarios__button--accent scenario-form__submit" disabled={saving}>
+            {saving ? 'Сохраняем...' : editingId === null ? 'Сохранить' : 'Сохранить изменения'}
+          </button>
+        </form>
       )}
-    </label>
 
-<label>
-  Значение действия
-  <input
-    value={actionValue}
-    onChange={(event) => setActionValue(event.target.value)}
-    required
-  />
-</label>
-
-    {formError && (
-      <p className="scenarios__message--error" role="alert">
-        {formError}
-      </p>
-    )}
-
-    <button type="submit" disabled={saving}>
-      {saving ? 'Сохраняем...' : editingId === null ? 'Сохранить сценарий' : 'Сохранить изменения'}
-    </button>
-  </form>
-)}
-
-
-      {loading && <p>Загружаем сценарии...</p>}
+      {loading && (
+        <div className="scenarios__status">
+          <div className="notice notice--info" role="status">
+            <span className="spinner" aria-hidden="true" />
+            Загрузка сценариев
+          </div>
+        </div>
+      )}
 
       {!loading && error && (
-        <div className="scenarios__message scenarios__message--error">
-          <p>{error}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-          >
-            Повторить
-          </button>
+        <div className="scenarios__status">
+          <div className="notice notice--error" role="alert">
+            {error}
+            <button type="button" className="scenarios__link-button scenarios__link-button--small" onClick={() => window.location.reload()}>
+              Повторить
+            </button>
+          </div>
         </div>
       )}
 
       {!loading && !error && rules.length === 0 && (
         <div className="scenarios__empty">
           <h2>Пока нет сценариев</h2>
-          <p>
-            Когда правила появятся на сервере, они отобразятся здесь.
-          </p>
+          <p>Создайте первый сценарий, и он появится здесь.</p>
         </div>
       )}
 
-      
-    {!loading && !error && rules.length > 0 && (
-      <div className="scenarios__list">
-        {rules.map((rule) => (
-          <article className="scenarios__card" key={rule.id}>
-            <h2>{rule.name}</h2>
-        
-            <div className="scenario-rule">
-              <p className="scenario-rule__label">ЕСЛИ</p>
-        
-              <p className="scenario-rule__condition">
-                {getDeviceName(rule.when.device)} –{' '}
-                {getSignalName(rule.when.device, rule.when.signal, signalTitles)}{' '}
-                {operatorNames[rule.when.op] ?? rule.when.op}{' '}
-                {formatConditionValue(rule.when.value)}
-              </p>
-        
-              <p className="scenario-rule__label">ТО</p>
-        
-              <ul className="scenario-rule__actions">
+      {!loading && !error && rules.length > 0 && (
+        <div className="scenarios__list">
+          {rules.map((rule) => (
+            <article className="scenario-card" key={rule.id}>
+              <h2 className="scenario-card__title">{rule.name}</h2>
+
+              <h3 className="scenario-section__title">Если</h3>
+              <div className="scenario-block">
+                <ScenarioRow
+                  device={rule.when.device}
+                  text={`${signalTitle(rule.when.device, rule.when.signal)} ${operatorNames[rule.when.op] ?? rule.when.op} ${rule.when.value}`}
+                />
+              </div>
+
+              <h3 className="scenario-section__title">Тогда</h3>
+              <div className="scenario-block">
                 {rule.then.map((action, index) => (
-                  <li key={`${action.device}-${action.signal}-${index}`}>
-                    {getDeviceName(action.device)} –{' '}
-                    {getSignalName(action.device, action.signal, signalTitles)}:{' '}
-                    {String(action.value)}
-                  </li>
+                  <ScenarioRow
+                    key={`${action.device}-${action.signal}-${index}`}
+                    device={action.device}
+                    text={`${signalTitle(action.device, action.signal)}: ${action.value}`}
+                  />
                 ))}
-              </ul>
-            </div>
+              </div>
 
-            <div className="scenarios__card-actions">
-              <button
-                type="button"
-                onClick={() => startEdit(rule)}
-                disabled={deletingId === rule.id}
-              >
-                Редактировать
-              </button>
-              <button
-                type="button"
-                className="scenarios__button--danger"
-                onClick={() => void deleteRule(rule)}
-                disabled={deletingId === rule.id}
-              >
-                {deletingId === rule.id ? 'Удаляем...' : 'Удалить'}
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-    )}
-
+              <div className="scenario-card__actions">
+                <button type="button" className="scenarios__button" onClick={() => startEdit(rule)} disabled={deletingId === rule.id}>
+                  Редактировать
+                </button>
+                <button type="button" className="scenarios__button scenarios__button--danger" onClick={() => void deleteRule(rule)} disabled={deletingId === rule.id}>
+                  {deletingId === rule.id ? 'Удаляем...' : 'Удалить'}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
