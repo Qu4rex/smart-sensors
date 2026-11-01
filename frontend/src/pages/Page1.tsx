@@ -160,6 +160,8 @@ export default function Page1() {
   const [isSavingTargetCo2, setIsSavingTargetCo2] = useState(false)
   const [fanSpeed, setFanSpeed] = useState('')
   const [isSavingFanSpeed, setIsSavingFanSpeed] = useState(false)
+  const [brightness, setBrightness] = useState('')
+  const [isSavingBrightness, setIsSavingBrightness] = useState(false)
   const [isDeviceMenuOpen, setIsDeviceMenuOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -281,6 +283,7 @@ export default function Page1() {
         if (device.templateKey === 'thermostat') setTargetTemperature(String(details.state.target_temp ?? ''))
         if (device.templateKey === 'ventilation') setTargetCo2(String(details.state.co2_target ?? ''))
         if (device.templateKey === 'ventilation') setFanSpeed(String(details.state.fan_speed ?? ''))
+        if (device.templateKey === 'light') setBrightness(String(details.state.brightness ?? ''))
       })
       .catch(() => setDetailsError('Не удалось загрузить данные устройства'))
   }
@@ -398,6 +401,23 @@ export default function Page1() {
       setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить скорость вентилятора')
     } finally {
       setIsSavingFanSpeed(false)
+    }
+  }
+
+  const saveBrightness = async () => {
+    const value = Number(brightness)
+    if (!Number.isInteger(value) || value < 1 || value > 100) return
+    setIsSavingBrightness(true)
+    setDetailsError('')
+    try {
+      const result = await sendDeviceCommand('light', 'brightness', value)
+      setDeviceDetails((current) => current ? { ...current, state: { ...current.state, ...result.state } } : current)
+      setDeviceOptions((current) => current.map((device) => device.key === 'light' ? { ...device, state: { ...device.state, ...result.state } } : device))
+      setBrightness(String(result.state.brightness ?? value))
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить яркость')
+    } finally {
+      setIsSavingBrightness(false)
     }
   }
 
@@ -590,6 +610,12 @@ export default function Page1() {
                       <dd className="device-details__target-control">
                         <input type="number" min="0" max="6" step="1" value={fanSpeed} onChange={(event) => setFanSpeed(event.target.value)} aria-label="Скорость вентилятора" />
                         <button type="button" onClick={saveFanSpeed} disabled={isSavingFanSpeed || fanSpeed === ''}>ОК</button>
+                      </dd>
+                    ) : selectedDevice.templateKey === 'light' && signal.name === 'brightness' ? (
+                      <dd className="device-details__target-control">
+                        <input type="number" min="1" max="100" step="1" value={brightness} onChange={(event) => setBrightness(event.target.value)} aria-label="Яркость светильника" />
+                        <span>%</span>
+                        <button type="button" onClick={saveBrightness} disabled={isSavingBrightness || brightness === ''}>ОК</button>
                       </dd>
                     ) : <dd>{formatSignalValue(signal)}</dd>}
                   </div>
