@@ -16,13 +16,21 @@ _next_id = 1
 
 
 def add_rule(rule):
-    """ Cохраняет правило и выдаёт ему id"""
     global _next_id
     rule = {"id": _next_id, **rule}
     rules[_next_id] = rule
     _next_id += 1
     return rule
 
+def update_rule(rule_id, data):
+    if rule_id not in rules:
+        return None
+
+    rule = {"id": rule_id, **data}
+    rules[rule_id] = rule
+    _active.pop(rule_id, None)
+
+    return rule
 
 def update_rule(rule_id, data):
     if rule_id not in rules:

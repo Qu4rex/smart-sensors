@@ -5,27 +5,27 @@ import { logoutRequest } from '../../api/auth'
 import logoOnDark from '../../assets/logo-light.svg'
 import logoOnLight from '../../assets/logo-dark.svg'
 import { clearToken } from '../../utils/token'
-import { FileIcon, LogoutIcon, ProfileIcon, SettingsIcon, SidebarIcon } from './icons'
+import { FileIcon,RoomsIcon, LogoutIcon, ProfileIcon, SettingsIcon, SidebarIcon, EmulationIcon, DeviceIcon } from './icons'
 import LogoutDialog from './LogoutDialog'
 
 const pages = [
-  { to: '/page1', label: 'Страница 1', icon: <FileIcon /> },
-  { to: '/page2', label: 'Страница 2', icon: <FileIcon /> },
-  { to: '/scenarios', label: 'Сценарии', icon: <FileIcon /> },
-  { to: '/page4', label: 'Страница 4', icon: <FileIcon /> },
+  { to: '/page1', label: 'Устройства', icon: <DeviceIcon /> },
+  { to: '/page2', label: 'Эмуляция', icon: <EmulationIcon /> },
+  { to: '/page3', label: 'Сценарии', icon: <FileIcon /> },
+  { to: '/page4', label: 'Комнаты', icon: <RoomsIcon /> },
 ]
 
 type SidebarProps = {
   collapsed: boolean
   onToggle: () => void
   onNavigate: () => void
+  userName: string
 }
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'menu__item menu__item--active' : 'menu__item'
 
-export default function Sidebar({ collapsed, onToggle, onNavigate }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, onNavigate, userName }: SidebarProps) {
   const [logoutOpen, setLogoutOpen] = useState(false)
-  const username = 'guest'
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -77,9 +77,9 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }: SidebarProp
         </NavLink>
 
         <div className="profile">
-          <div className="profile__info" title={username}>
+          <div className="profile__info" title={userName}>
             <ProfileIcon />
-            <span className="profile__name">{username}</span>
+            <span className="profile__name">{userName}</span>
           </div>
 
           <button

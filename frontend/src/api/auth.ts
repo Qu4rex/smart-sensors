@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client'
+import { apiGet, apiPatch, apiPost } from './client'
 
 export type LoginPayload = {
   login: string
@@ -20,7 +20,14 @@ export type UserInfo = {
   id: number
   login: string
   is_active: boolean
+  first_name: string | null
+  second_name: string | null
   created_at: string
+}
+
+export type ProfilePayload = {
+  first_name: string
+  second_name: string
 }
 
 export function loginRequest(data: LoginPayload) {
@@ -37,4 +44,8 @@ export function logoutRequest() {
 
 export function meRequest() {
   return apiGet<UserInfo>('/auth/me')
+}
+
+export function updateProfileRequest(data: ProfilePayload) {
+  return apiPatch<UserInfo>('/auth/me', data)
 }
