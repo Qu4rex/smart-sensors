@@ -18,3 +18,9 @@ class RuleIn(BaseModel):
     name: str
     when: When
     then: list[Action]
+
+
+class SimulateIn(BaseModel):
+    rule_id: int | None = None
+    when: When | None = None
+    value: int | float | str | None = None

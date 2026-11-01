@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 
 from src.schemas.rules import RuleIn
 from src.services import rules
+from src.schemas.rules import When, Action, RuleIn, SimulateIn
+from src.services.notifications import notify
 
 router = APIRouter(prefix="/rules")
 
@@ -37,3 +39,16 @@ async def delete_rule(rule_id: int):
 async def get_log():
     """Журнал активности сценариев"""
     return rules.log
+
+@router.post("/simulate")
+async def simulate_rule(body: SimulateIn):
+    try:
+        return rules.simulate(
+            rule_id=body.rule_id,
+            when=body.when.model_dump() if body.when else None,
+            value=body.value,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=exc.args[0])
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))

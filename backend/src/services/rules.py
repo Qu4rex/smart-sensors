@@ -80,6 +80,48 @@ def check_rules():
             print(f"[rules] правило {rule_id}: {exc}")
 
 
+def simulate(rule_id=None, when=None, value=None):
+    """Пробная проверка условия: команды не отправляются, состояние устройств не меняется.
+    value - введённое показание датчика; без него берётся текущее значение устройства.
+    Ошибки: LookupError (нет сценария/устройства/сигнала), ValueError (неверные данные)."""
+    rule = None
+    if rule_id is not None:
+        rule = rules.get(rule_id)
+        if rule is None:
+            raise LookupError("Сценарий не найден")
+        when = rule["when"]
+    if when is None:
+        raise ValueError("Укажите сценарий или условие")
+
+    if when["op"] not in OPS:
+        raise ValueError(f"Неизвестный оператор «{when['op']}»")
+    if when["device"] not in device_hub.devices:
+        raise LookupError(f"Устройство «{when['device']}» не найдено")
+    state = device_hub.get_state(when["device"])
+    if when["signal"] not in state:
+        raise LookupError(f"У устройства нет сигнала «{when['signal']}»")
+
+    current = state[when["signal"]]
+    checked = current if value is None else value
+    try:
+        triggered = bool(OPS[when["op"]](checked, when["value"]))
+    except TypeError:
+        raise ValueError(f"Нельзя сравнить «{checked}» и «{when['value']}»")
+
+    return {
+        "rule_id": rule["id"] if rule else None,
+        "rule_name": rule["name"] if rule else None,
+        "when": when,
+        "current": current,
+        "checked": checked,
+        "from_input": value is not None,
+        "triggered": triggered,
+        # настоящий сценарий срабатывает один раз, пока условие не перестанет выполняться
+        "already_active": bool(rule and _active.get(rule["id"])),
+        "then": rule["then"] if rule else [],
+    }
+
+
 async def rules_loop():
     """Раз в секунду проверяет срабатывание"""
     while True:
