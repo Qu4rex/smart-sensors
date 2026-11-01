@@ -394,3 +394,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.scenario-device-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}

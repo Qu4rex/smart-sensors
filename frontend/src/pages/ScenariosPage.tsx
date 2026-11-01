@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { apiDelete, apiGet, apiPost, apiPut } from '../api/client'
+import barrierImage from '../assets/barrier.png'
+import counterImage from '../assets/counter.png'
+import elevatorImage from '../assets/elevator.png'
+import fireImage from '../assets/fire.png'
+import leakImage from '../assets/leak.png'
+import lightImage from '../assets/light.png'
+import thermostatImage from '../assets/thermostat.png'
+import ventilationImage from '../assets/ventilation.png'
 
 type RuleAction = {
   device: string
@@ -18,6 +26,21 @@ type Rule = {
     value: number | string
   }
   then: RuleAction[]
+}
+
+const deviceImages: Record<string, string> = {
+  barrier: barrierImage,
+  thermostat: thermostatImage,
+  counter: counterImage,
+  light: lightImage,
+  leak: leakImage,
+  fire: fireImage,
+  ventilation: ventilationImage,
+  elevator: elevatorImage,
+}
+
+const getDeviceImage = (device: string): string | undefined => {
+  return deviceImages[device]
 }
 
 /* передаем возможные сигналы */
@@ -107,9 +130,17 @@ function ScenarioRow({ device, text }: { device: string; text: string }) {
 
   return (
     <div className="scenario-row">
-      <span className="scenario-avatar" aria-hidden="true">
-        {label.charAt(0)}
-      </span>
+      <span className="scenario-avatar">
+  {getDeviceImage(device) ? (
+    <img
+      src={getDeviceImage(device)}
+      alt={label}
+      className="scenario-device-image"
+    />
+  ) : (
+    label.charAt(0)
+  )}
+</span>
 
       <div className="scenario-row__text">
         <span className="scenario-row__label">{label}</span>
@@ -140,9 +171,9 @@ function SignalSelect({
 }: SignalSelectProps) {
   const state = device ? status[device] : undefined
 
-  const signals = (declarations[device] ?? []).filter((signal) =>
-    signal.control.includes(mode),
-  )
+ const signals = (declarations[device] ?? []).filter((signal) =>
+  (signal.management ?? '').includes(mode),
+)
 
   const disabled =
     !device ||
@@ -521,8 +552,16 @@ useEffect(() => {
             <h3 className="scenario-section__title">Если</h3>
             <div className="scenario-block">
               <div className="scenario-row">
-                <span className="scenario-avatar" aria-hidden="true">
-                  {triggerDevice ? capitalize(getDeviceName(triggerDevice)).charAt(0) : '?'}
+                <span className="scenario-avatar">
+                  {triggerDevice && getDeviceImage(triggerDevice) ? (
+                    <img
+                      src={getDeviceImage(triggerDevice)}
+                      alt={getDeviceName(triggerDevice)}
+                      className="scenario-device-image"
+                    />
+                  ) : (
+                    triggerDevice ? capitalize(getDeviceName(triggerDevice)).charAt(0) : '?'
+                  )}
                 </span>
                 <div className="scenario-fields">
                   <label className="scenario-field">
@@ -571,8 +610,16 @@ useEffect(() => {
             <div className="scenario-block">
               {actions.map((action) => (
                 <div className="scenario-row" key={action.key}>
-                  <span className="scenario-avatar" aria-hidden="true">
-                    {action.device ? capitalize(getDeviceName(action.device)).charAt(0) : '?'}
+                  <span className="scenario-avatar">
+                    {action.device && getDeviceImage(action.device) ? (
+                      <img
+                        src={getDeviceImage(action.device)}
+                        alt={getDeviceName(action.device)}
+                        className="scenario-device-image"
+                      />
+                    ) : (
+                      action.device ? capitalize(getDeviceName(action.device)).charAt(0) : '?'
+                    )}
                   </span>
                   <div className="scenario-fields">
                     <label className="scenario-field">
