@@ -1,4 +1,5 @@
 import { useTheme } from '../hooks/useTheme'
+import { EnableNotificationsButton } from '../components/Notifications/NotificationsProvider'
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
@@ -22,6 +23,8 @@ export default function SettingsPage() {
         >
           <span className="switch__thumb" />
         </button>
+        <EnableNotificationsButton />
+
       </div>
     </section>
   )
