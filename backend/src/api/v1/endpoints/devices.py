@@ -105,4 +105,4 @@ async def set_leak(wet: bool):
 )
 async def set_emergency(name: str, on: bool = Query(description="true - авария, false - сброс")):
     device_hub.set_emergency(name, on)
-    return {"ok": True}
+    return {"ok": True, "state": device_hub.get_state(name)}
