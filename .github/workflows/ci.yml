@@ -68,6 +68,7 @@ jobs:
         run: uv run alembic check
 
 
+
   frontend:
     name: frontend
     runs-on: ubuntu-latest
