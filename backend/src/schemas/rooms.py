@@ -10,3 +10,7 @@ class RoomCreate(BaseModel):
 class RoomRead(RoomCreate):
     id: int
     created_at: datetime
+
+
+class RoomUpdate(RoomCreate):
+    pass

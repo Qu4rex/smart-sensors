@@ -16,6 +16,7 @@ class FireDetector(Device):
     def __init__(self, *args, threshold: int = 60, **kwargs):
         super().__init__(*args, **kwargs)
         self._smoke = 5
+        self._emergency = False
         self.add_signal(Signal("smoke", "Задымлённость", "graph", "r", "property", 5, "%"))
         self.add_signal(
             Signal("alarm", "Пожар", "list", "r", "property", 0, layout={0: "нет", 1: "ЕСТЬ"})
@@ -61,6 +62,14 @@ class FireDetector(Device):
         """Рука демо: подать дым (0..100)."""
         self._smoke = max(0, min(100, level))
 
+    def set_emergency(self, on: bool) -> None:
+        """Тестовая тревога держится включённой до явного сброса."""
+        self._emergency = on
+        self._smoke = 100 if on else 0
+        self.set_value("smoke", self._smoke)
+        self.set_value("alarm", 1 if on else 0)
+        self.set_value("duty", 0 if on else 1)
+
     def on_command(self, name, value) -> None:
         if name == "self_test" and int(value):
             self.log(
@@ -68,9 +77,11 @@ class FireDetector(Device):
             )
 
     def tick(self, dt: int) -> None:
+        if self._emergency:
+            self._smoke = 100
         self.set_value("smoke", self._smoke)
         fire = self._smoke >= int(self.signals["threshold"].value)
         self.set_value("alarm", 1 if fire else 0)
         self.set_value("duty", 0 if fire else 1)
-        if self._smoke > 0:
+        if self._smoke > 0 and not self._emergency:
             self._smoke = max(0, self._smoke - 1)
