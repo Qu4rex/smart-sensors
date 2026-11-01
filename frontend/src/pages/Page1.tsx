@@ -33,6 +33,7 @@ const deviceImages: Record<string, string> = {
 }
 
 const hiddenDetailSignals: Record<string, Set<string>> = {
+  barrier: new Set(['open_cmd', 'close_cmd']),
   leak: new Set(['self_test']),
   fire: new Set(['self_test']),
   elevator: new Set(['floor_changed', 'emergency_btn']),
@@ -111,6 +112,12 @@ export default function Page1() {
   const [editedName, setEditedName] = useState('')
   const [editedRoom, setEditedRoom] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
+  const [targetTemperature, setTargetTemperature] = useState('')
+  const [isSavingTargetTemperature, setIsSavingTargetTemperature] = useState(false)
+  const [targetCo2, setTargetCo2] = useState('')
+  const [isSavingTargetCo2, setIsSavingTargetCo2] = useState(false)
+  const [fanSpeed, setFanSpeed] = useState('')
+  const [isSavingFanSpeed, setIsSavingFanSpeed] = useState(false)
   const [isDeviceMenuOpen, setIsDeviceMenuOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -204,7 +211,12 @@ export default function Page1() {
     setDeviceDetails(null)
     setDetailsError('')
     getDeviceDetails(device.templateKey)
-      .then(setDeviceDetails)
+      .then((details) => {
+        setDeviceDetails(details)
+        if (device.templateKey === 'thermostat') setTargetTemperature(String(details.state.target_temp ?? ''))
+        if (device.templateKey === 'ventilation') setTargetCo2(String(details.state.co2_target ?? ''))
+        if (device.templateKey === 'ventilation') setFanSpeed(String(details.state.fan_speed ?? ''))
+      })
       .catch(() => setDetailsError('Не удалось загрузить данные устройства'))
   }
 
@@ -269,6 +281,58 @@ export default function Page1() {
       setDetailsError(error instanceof Error ? error.message : 'Не удалось сохранить название')
     } finally {
       setIsSavingName(false)
+    }
+  }
+
+  const saveTargetTemperature = async () => {
+    const value = Number(targetTemperature)
+    if (!Number.isFinite(value)) return
+    setIsSavingTargetTemperature(true)
+    setDetailsError('')
+    try {
+      const result = await sendDeviceCommand('thermostat', 'target_temp', value)
+      setDeviceDetails((current) => current ? { ...current, state: { ...current.state, ...result.state } } : current)
+      setDeviceOptions((current) => current.map((device) => device.key === 'thermostat' ? { ...device, state: { ...device.state, ...result.state } } : device))
+      setTargetTemperature(String(result.state.target_temp ?? value))
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить целевую температуру')
+    } finally {
+      setIsSavingTargetTemperature(false)
+    }
+  }
+
+  const saveTargetCo2 = async () => {
+    const value = Number(targetCo2)
+    if (!Number.isFinite(value)) return
+    setIsSavingTargetCo2(true)
+    setDetailsError('')
+    try {
+      const result = await sendDeviceCommand('ventilation', 'co2_target', value)
+      setDeviceDetails((current) => current ? { ...current, state: { ...current.state, ...result.state } } : current)
+      setDeviceOptions((current) => current.map((device) => device.key === 'ventilation' ? { ...device, state: { ...device.state, ...result.state } } : device))
+      setTargetCo2(String(result.state.co2_target ?? value))
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить целевой CO₂')
+    } finally {
+      setIsSavingTargetCo2(false)
+    }
+  }
+
+  const saveFanSpeed = async () => {
+    const value = Number(fanSpeed)
+    if (!Number.isInteger(value) || value < 0 || value > 6) return
+    setIsSavingFanSpeed(true)
+    setDetailsError('')
+    try {
+      await sendDeviceCommand('ventilation', 'mode', 2)
+      const result = await sendDeviceCommand('ventilation', 'fan_speed', value)
+      setDeviceDetails((current) => current ? { ...current, state: { ...current.state, ...result.state } } : current)
+      setDeviceOptions((current) => current.map((device) => device.key === 'ventilation' ? { ...device, state: { ...device.state, ...result.state } } : device))
+      setFanSpeed(String(result.state.fan_speed ?? value))
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить скорость вентилятора')
+    } finally {
+      setIsSavingFanSpeed(false)
     }
   }
 
@@ -435,7 +499,24 @@ export default function Page1() {
                 {deviceDetails.declaration.filter((signal) => signal.name !== 'fw' && !hiddenDetailSignals[selectedDevice.templateKey]?.has(signal.name)).map((signal) => (
                   <div className="device-details__row" key={signal.name}>
                     <dt>{signal.title}</dt>
-                    <dd>{formatSignalValue(signal)}</dd>
+                    {selectedDevice.templateKey === 'thermostat' && signal.name === 'target_temp' ? (
+                      <dd className="device-details__target-control">
+                        <input type="number" min="5" max="35" step="0.1" value={targetTemperature} onChange={(event) => setTargetTemperature(event.target.value)} aria-label="Целевая температура" />
+                        <span>°C</span>
+                        <button type="button" onClick={saveTargetTemperature} disabled={isSavingTargetTemperature || targetTemperature === ''}>ОК</button>
+                      </dd>
+                    ) : selectedDevice.templateKey === 'ventilation' && signal.name === 'co2_target' ? (
+                      <dd className="device-details__target-control">
+                        <input type="number" min="400" max="1400" step="10" value={targetCo2} onChange={(event) => setTargetCo2(event.target.value)} aria-label="Целевой CO₂" />
+                        <span>ppm</span>
+                        <button type="button" onClick={saveTargetCo2} disabled={isSavingTargetCo2 || targetCo2 === ''}>ОК</button>
+                      </dd>
+                    ) : selectedDevice.templateKey === 'ventilation' && signal.name === 'fan_speed' ? (
+                      <dd className="device-details__target-control">
+                        <input type="number" min="0" max="6" step="1" value={fanSpeed} onChange={(event) => setFanSpeed(event.target.value)} aria-label="Скорость вентилятора" />
+                        <button type="button" onClick={saveFanSpeed} disabled={isSavingFanSpeed || fanSpeed === ''}>ОК</button>
+                      </dd>
+                    ) : <dd>{formatSignalValue(signal)}</dd>}
                   </div>
                 ))}
               </dl>

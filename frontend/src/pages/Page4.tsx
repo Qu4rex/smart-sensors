@@ -27,6 +27,17 @@ function countLabel(count: number) {
   return `${count} датчиков`
 }
 
+const deviceTypeLabels: Record<string, string> = {
+  barrier: 'Шлагбаум',
+  thermostat: 'Термостат',
+  counter: 'Счётчик',
+  light: 'Светильник',
+  leak: 'Датчик протечки',
+  fire: 'Датчик пожара',
+  ventilation: 'Вентиляция',
+  elevator: 'Лифт',
+}
+
 export default function Page4() {
   const { rooms, updateRoom, deleteRoom } = useOutletContext<LayoutContext>()
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
@@ -85,7 +96,7 @@ export default function Page4() {
         </div>
         <div className="room-modal__devices">
           {roomDevices.length === 0 ? <p className="panel__text">В этой комнате пока нет датчиков</p> : <ul className="room-modal__device-list">
-            {roomDevices.map((device) => <li key={device.id}><span>{device.name}</span><small>{device.device_type}</small>{isEditing && <button type="button" className="room-modal__device-delete" aria-label={`Удалить ${device.name}`} onClick={() => void removeDevice(device)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3m-9 0 1 13h10l1-13" /></svg></button>}</li>)}
+            {roomDevices.map((device) => <li key={device.id}><span>{device.name}</span><small>{deviceTypeLabels[device.device_type] ?? device.device_type}</small>{isEditing && <button type="button" className="room-modal__device-delete" aria-label={`Удалить ${device.name}`} onClick={() => void removeDevice(device)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3m-9 0 1 13h10l1-13" /></svg></button>}</li>)}
           </ul>}
         </div>
         {isEditing && <button className="device-modal__save" type="button" onClick={() => void saveRoom()} disabled={isSaving || !roomName.trim()}>Сохранить</button>}

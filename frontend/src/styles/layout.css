@@ -316,6 +316,50 @@
   text-align: right;
 }
 
+.device-details__target-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.device-details__target-control input {
+  width: 82px;
+  height: 32px;
+  padding: 0 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  outline: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+}
+
+.device-details__target-control input:focus {
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.device-details__target-control button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.device-details__target-control button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .device-details__room-select {
   max-width: 180px;
   border: 1px solid var(--color-border);
