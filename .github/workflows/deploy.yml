@@ -1,0 +1,74 @@
+# Автоматический деплой: при пуше в main сначала запускается CI,
+# и только если всё зелёное, код копируется на сервер и перезапускается.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # ручной запуск
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: deploy
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Секреты берутся из Settings → Environments → production
+    environment:
+      name: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/hackathon' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Настройка SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Отпечаток сервера зафиксирован заранее: защита от подмены сервера
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CONFIG
+          Host deploy-server
+            HostName ${SSH_HOST}
+            User ${SSH_USER}
+            Port ${SSH_PORT}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          CONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Проверка соединения с сервером
+        run: |
+          ssh deploy-server 'echo "SSH работает, сервер: $(hostname)"'
+
+      - name: Копирование файлов на сервер
+        run: |
+          rsync -az --delete \
+            --exclude-from=deploy/rsync-exclude.txt \
+            -e ssh \
+            ./ "deploy-server:${DEPLOY_PATH}/"
+
+      - name: Деплой (сборка и перезапуск контейнеров)
+        run: |
+          # shellcheck disable=SC2029  # DEPLOY_PATH намеренно подставляется на стороне runner
+          ssh deploy-server "cd '${DEPLOY_PATH}' && bash deploy/deploy.sh"
