@@ -200,6 +200,10 @@
   object-position: right top;
 }
 
+.device-card__image--light-on {
+  transform: translate(-2px, 1px) scale(0.9);
+}
+
 .device-card__switch {
   width: 42px;
   height: 24px;

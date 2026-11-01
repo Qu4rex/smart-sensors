@@ -8,6 +8,7 @@ import elevatorImage from '../assets/elevator.png'
 import fireImage from '../assets/fire.png'
 import leakImage from '../assets/leak.png'
 import lightImage from '../assets/light.png'
+import onLightImage from '../assets/on-light.png'
 import thermostatImage from '../assets/thermostat.png'
 import ventilationImage from '../assets/ventilation.png'
 import type { LayoutContext } from '../components/Layout/Layout'
@@ -465,7 +466,7 @@ export default function Page1() {
                   {template.key === 'ventilation' && <MetricSparkline values={co2History.map((sample) => sample.value)} label="Изменение уровня CO₂" />}
                 </div>
                 {deviceImages[template.key] ? (
-                  <img className="device-card__image" src={deviceImages[template.key]} alt="" />
+                  <img className={template.key === 'light' && Number(template.state.lamp) === 1 ? 'device-card__image device-card__image--light-on' : 'device-card__image'} src={template.key === 'light' && Number(template.state.lamp) === 1 ? onLightImage : deviceImages[template.key]} alt="" />
                 ) : (
                   <div className="device-card__icon"><DeviceIcon type={template.key} /></div>
                 )}
