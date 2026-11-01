@@ -27,6 +27,7 @@ type DeviceSignal = {
   control: string
   kind: string
   group: string
+  management: string
 }
 
 type DeviceDetails = {
@@ -289,10 +290,51 @@ useEffect(() => {
   useEffect(() => {
   const timers = noticeTimers.current
 
-  return () => {
-    timers.forEach((timer) => window.clearTimeout(timer))
-  }
-}, [])
+        if (!cancelled) {
+          const available = (data.declaration ?? []).filter((signal) =>
+            signal.management.includes('r'),
+          )
+          setTriggerSignals(available)
+
+          const pending = pendingTriggerSignal.current
+          pendingTriggerSignal.current = null
+          if (pending && available.some((signal) => signal.name === pending)) {
+            setTriggerSignal(pending)
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setTriggerSignalsError(
+            err instanceof Error
+              ? err.message
+              : 'Не удалось загрузить сигналы',
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setTriggerSignalsLoading(false)
+        }
+      }
+    }
+
+    void loadSignals()
+
+    return () => {
+      cancelled = true
+    }
+  }, [triggerDevice])
+
+  /* два запроса тк устройство для условия может отличаться от устройства, которым мы управляем*/
+
+  useEffect(() => {
+    setActionSignals([])
+    setActionSignal('')
+    setActionSignalsError('')
+
+    if (!actionDevice || actionDevice === 'notification') {
+      setActionSignalsLoading(false)
+      return
+    }
 
 function showNotice(text: string, kind: 'success' | 'error' = 'success') {
   const timers = noticeTimers.current
@@ -302,12 +344,11 @@ function showNotice(text: string, kind: 'success' | 'error' = 'success') {
 
   setNotice({ text, kind })
 
-  timers.push(
-    window.setTimeout(() => setNoticeOpen(true), 20),
-    window.setTimeout(() => setNoticeOpen(false), NOTICE_MS),
-    window.setTimeout(() => setNotice(null), NOTICE_MS + NOTICE_FADE_MS),
-  )
-}
+        if (!cancelled) {
+          const available = (data.declaration ?? []).filter((signal) =>
+            signal.management.includes('w'),
+          )
+          setActionSignals(available)
 
 function scrollToTop() {
   sectionRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' })

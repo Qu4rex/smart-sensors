@@ -75,7 +75,7 @@ class AuthService:
         updated = await self.users.update_profile(
             user,
             first_name=data.first_name,
-            last_name=data.last_name,
+            second_name=data.second_name,
         )
         await self.session.commit()
         return updated
