@@ -287,77 +287,37 @@ useEffect(() => {
     }
   }, [])
 
+
   useEffect(() => {
-  const timers = noticeTimers.current
-
-        if (!cancelled) {
-          const available = (data.declaration ?? []).filter((signal) =>
-            signal.management.includes('r'),
-          )
-          setTriggerSignals(available)
-
-          const pending = pendingTriggerSignal.current
-          pendingTriggerSignal.current = null
-          if (pending && available.some((signal) => signal.name === pending)) {
-            setTriggerSignal(pending)
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setTriggerSignalsError(
-            err instanceof Error
-              ? err.message
-              : 'Не удалось загрузить сигналы',
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setTriggerSignalsLoading(false)
-        }
-      }
-    }
-
-    void loadSignals()
+    const timers = noticeTimers.current
 
     return () => {
-      cancelled = true
+      timers.forEach((timer) => window.clearTimeout(timer))
     }
-  }, [triggerDevice])
+  }, [])
 
-  /* два запроса тк устройство для условия может отличаться от устройства, которым мы управляем*/
+  function showNotice(text: string, kind: 'success' | 'error' = 'success') {
+    const timers = noticeTimers.current
 
-  useEffect(() => {
-    setActionSignals([])
-    setActionSignal('')
-    setActionSignalsError('')
+    timers.forEach((timer) => window.clearTimeout(timer))
+    timers.length = 0
 
-    if (!actionDevice || actionDevice === 'notification') {
-      setActionSignalsLoading(false)
-      return
-    }
+    setNotice({ text, kind })
 
-function showNotice(text: string, kind: 'success' | 'error' = 'success') {
-  const timers = noticeTimers.current
+    timers.push(
+      window.setTimeout(() => setNoticeOpen(true), 20),
+      window.setTimeout(() => setNoticeOpen(false), NOTICE_MS),
+      window.setTimeout(() => setNotice(null), NOTICE_MS + NOTICE_FADE_MS),
+    )
+  }
 
-  timers.forEach((timer) => window.clearTimeout(timer))
-  timers.length = 0
+  function scrollToTop() {
+    sectionRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' })
+  }
 
-  setNotice({ text, kind })
-
-        if (!cancelled) {
-          const available = (data.declaration ?? []).filter((signal) =>
-            signal.management.includes('w'),
-          )
-          setActionSignals(available)
-
-function scrollToTop() {
-  sectionRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' })
-}
-
-function signalTitle(device: string, signal: string) {
-  return declarations[device]?.find((item) => item.name === signal)?.title ?? signal
-}
-
+  function signalTitle(device: string, signal: string) {
+    return declarations[device]?.find((item) => item.name === signal)?.title ?? signal
+  }
 
   function resetForm() {
     setEditingId(null)
@@ -734,3 +694,4 @@ function signalTitle(device: string, signal: string) {
     </section>
   )
 }
+
