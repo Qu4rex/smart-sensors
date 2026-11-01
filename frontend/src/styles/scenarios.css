@@ -20,6 +20,14 @@
   font-size: 14px;
 }
 
+.scenarios__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 /* ---------- кнопки ---------- */
 
 .scenarios__button {
@@ -90,7 +98,6 @@
 .scenarios__toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 20px;
 }
 
 /* ---------- уведомления ---------- */
@@ -169,7 +176,7 @@
 }
 
 .scenarios__empty {
-  padding: 32px 16px;
+  padding: 96px 16px 32px;
   text-align: center;
   color: var(--color-muted);
 }
@@ -380,6 +387,17 @@
 
   .scenarios__header {
     flex-direction: column;
+    gap: 14px;
+  }
+
+  .scenarios__controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .scenarios__toolbar {
+    justify-content: flex-start;
   }
 
   .scenario-form {

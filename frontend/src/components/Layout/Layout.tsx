@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { meRequest } from '../../api/auth'
-import { createRoom, listRooms } from '../../api/rooms'
+import { createRoom, deleteRoom as deleteRoomRequest, listRooms, updateRoom as updateRoomRequest } from '../../api/rooms'
 import Sidebar from '../Sidebar/Sidebar'
 
 const SMALL_SCREEN = '(max-width: 900px)'
@@ -22,6 +22,8 @@ export type LayoutContext = {
   setProfile: (profile: UserProfile) => void
   rooms: Room[]
   addRoom: (name: string) => Promise<Room>
+  updateRoom: (id: number, name: string) => Promise<Room>
+  deleteRoom: (id: number) => Promise<void>
 }
 
 export default function Layout() {
@@ -52,6 +54,17 @@ export default function Layout() {
     return room
   }
 
+  const updateRoom = async (id: number, name: string) => {
+    const room = await updateRoomRequest(id, name)
+    setRooms((current) => current.map((item) => item.id === id ? room : item))
+    return room
+  }
+
+  const deleteRoom = async (id: number) => {
+    await deleteRoomRequest(id)
+    setRooms((current) => current.filter((item) => item.id !== id))
+  }
+
   return (
     <div className="layout">
       <Sidebar
@@ -64,7 +77,7 @@ export default function Layout() {
       {!collapsed && <div className="backdrop" onClick={() => setCollapsed(true)} />}
 
       <main className="content">
-        <Outlet context={{ profile, setProfile, rooms, addRoom } satisfies LayoutContext} />
+        <Outlet context={{ profile, setProfile, rooms, addRoom, updateRoom, deleteRoom } satisfies LayoutContext} />
       </main>
     </div>
   )

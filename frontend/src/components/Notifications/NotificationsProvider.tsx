@@ -155,11 +155,11 @@ export function useNotifications() {
   return ctx
 }
 
-export function EnableNotificationsButton() {
+export function EnableNotificationsButton({ className }: { className?: string }) {
   const { permission, enableSystemNotifications } = useNotifications()
   if (permission !== 'default') return null
   return (
-    <button type="button" onClick={() => void enableSystemNotifications()}>
+    <button type="button" className={className} onClick={() => void enableSystemNotifications()}>
       Включить уведомления браузера
     </button>
   )

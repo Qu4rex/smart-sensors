@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './client'
+import { apiDelete, apiGet, apiPatch, apiPost } from './client'
 
 export type StoredRoom = {
   id: number
@@ -12,4 +12,12 @@ export function listRooms(): Promise<StoredRoom[]> {
 
 export function createRoom(name: string): Promise<StoredRoom> {
   return apiPost<StoredRoom>('/rooms', { name })
+}
+
+export function updateRoom(id: number, name: string): Promise<StoredRoom> {
+  return apiPatch<StoredRoom>(`/rooms/${id}`, { name })
+}
+
+export function deleteRoom(id: number): Promise<void> {
+  return apiDelete(`/rooms/${id}`)
 }
