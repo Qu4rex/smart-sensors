@@ -1,4 +1,5 @@
 """Лифт: очередь вызовов, движение этаж-за-этажом, события floor_changed, авария."""
+
 from __future__ import annotations
 
 from core import Device, Signal
@@ -18,25 +19,50 @@ class Elevator(Device):
         self._target = None
         self._move_left = 0
         self._door_left = 0
-        self.add_signal(Signal("call_requested", "Вызвать (этаж)", "combolist", "w",
-                               "capability", 0, layout={0: "нет"}))
-        self.add_signal(Signal("floor_current", "Текущий этаж", "counter", "r",
-                               "property", 1, "", 1, floors))
-        self.add_signal(Signal("floor_destination", "Этаж назначения", "counter", "r",
-                               "property", 0, "", 0, floors))
-        self.add_signal(Signal("direction", "Направление", "list", "r", "property", STOP,
-                               layout={STOP: "стоит", UP: "вверх", DOWN: "вниз"}))
+        self.add_signal(
+            Signal(
+                "call_requested",
+                "Вызвать (этаж)",
+                "combolist",
+                "w",
+                "capability",
+                0,
+                layout={0: "нет"},
+            )
+        )
+        self.add_signal(
+            Signal("floor_current", "Текущий этаж", "counter", "r", "property", 1, "", 1, floors)
+        )
+        self.add_signal(
+            Signal(
+                "floor_destination", "Этаж назначения", "counter", "r", "property", 0, "", 0, floors
+            )
+        )
+        self.add_signal(
+            Signal(
+                "direction",
+                "Направление",
+                "list",
+                "r",
+                "property",
+                STOP,
+                layout={STOP: "стоит", UP: "вверх", DOWN: "вниз"},
+            )
+        )
         self.add_signal(Signal("speed", "Скорость", "graph", "r", "property", 0.0, "м/с"))
-        self.add_signal(Signal("door", "Двери", "list", "r", "property", 0,
-                               layout={0: "закрыты", 1: "открыты"}))
-        self.add_signal(Signal("floor_changed", "Событие: этаж пройден", "push_time",
-                               "r", "property", 0))
-        self.add_signal(Signal("emergency", "Авария", "list", "r", "property", 0,
-                               layout={0: "норма", 1: "авария"}))
-        self.add_signal(Signal("emergency_btn", "Кнопка аварии", "push_time", "w",
-                               "capability", 0))
-        self.add_signal(Signal("floors_total", "Этажей в шахте", "counter", "r",
-                               "system", floors))
+        self.add_signal(
+            Signal("door", "Двери", "list", "r", "property", 0, layout={0: "закрыты", 1: "открыты"})
+        )
+        self.add_signal(
+            Signal("floor_changed", "Событие: этаж пройден", "push_time", "r", "property", 0)
+        )
+        self.add_signal(
+            Signal(
+                "emergency", "Авария", "list", "r", "property", 0, layout={0: "норма", 1: "авария"}
+            )
+        )
+        self.add_signal(Signal("emergency_btn", "Кнопка аварии", "push_time", "w", "capability", 0))
+        self.add_signal(Signal("floors_total", "Этажей в шахте", "counter", "r", "system", floors))
 
     def on_command(self, name: str, value) -> None:
         if name == "call_requested":

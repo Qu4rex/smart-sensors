@@ -10,6 +10,7 @@
 
 Сухой прогон (по умолчанию): печатает вызовы, сеть не трогает.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,14 +25,22 @@ def task_key(info: dict, name: str) -> str:
     (тот же приём, что main.py:_poll_once — один task исполняется один раз)."""
     for s in (info.get("data") or {}).get("signals", []):
         if (s.get("name") or s.get("signal_name")) == name:
-            dt = str(s.get("signal_task_dt") or s.get("task_dt")
-                     or s.get("dt") or "")
+            dt = str(s.get("signal_task_dt") or s.get("task_dt") or s.get("dt") or "")
             break
     return dt
 
 
-def run_once(client: UjinClient, ust: str, sn: str, ext: str, model: str,
-             cls: str, dict_prefix: str, apply_fn, seen: dict = None) -> list:
+def run_once(
+    client: UjinClient,
+    ust: str,
+    sn: str,
+    ext: str,
+    model: str,
+    cls: str,
+    dict_prefix: str,
+    apply_fn,
+    seen: dict = None,
+) -> list:
     """Один такт: прочитал задачи -> отсёк уже исполненные (seen) ->
     исполнил -> подтвердил сигналом. apply_fn(signal_without_prefix) ->
     подтверждается значение '1'."""
@@ -45,11 +54,18 @@ def run_once(client: UjinClient, ust: str, sn: str, ext: str, model: str,
         if seen.get(name) == key:
             continue  # та же задача, что уже исполнена (мина PULL-CLIENT)
         seen[name] = key
-        short = name[len(dict_prefix):] if name.startswith(dict_prefix) else name
+        short = name[len(dict_prefix) :] if name.startswith(dict_prefix) else name
         apply_fn(short, value)
-        client.update_signals(sn, model, [{
-            "signal": name, "value": value,
-        }])
+        client.update_signals(
+            sn,
+            model,
+            [
+                {
+                    "signal": name,
+                    "value": value,
+                }
+            ],
+        )
         done.append(name)
     return done
 
@@ -67,17 +83,20 @@ def main() -> None:
     ap.add_argument("--live", action="store_true")
     args = ap.parse_args()
 
-    client = UjinClient(base_url=os.environ.get(
-                            "UJIN_BASE", "https://api-uae-test.ujin.tech"),
-                        device_token="", dry_run=not args.live)
+    client = UjinClient(
+        base_url=os.environ.get("UJIN_BASE", "https://api-uae-test.ujin.tech"),
+        device_token="",
+        dry_run=not args.live,
+    )
 
     def apply(short, value):
         print(f"  исполняю команду: {short} = {value}")
 
     seen: dict = {}  # дедуп между тактами (R-06)
     while True:
-        done = run_once(client, args.ust, args.sn, args.ext, args.model,
-                        args.cls, args.dict_prefix, apply, seen)
+        done = run_once(
+            client, args.ust, args.sn, args.ext, args.model, args.cls, args.dict_prefix, apply, seen
+        )
         if done:
             print("подтверждено:", done)
         if args.once:

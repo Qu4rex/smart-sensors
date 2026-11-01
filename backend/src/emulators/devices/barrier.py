@@ -1,11 +1,17 @@
 """Шлагбаум: открытие по команде, авто-закрытие через hold_time, реверс по препятствию."""
+
 from __future__ import annotations
 
 from core import Device, Signal
 
 CLOSED, OPENING, OPEN, CLOSING, HOLD = 0, 1, 2, 3, 4
-LAYOUT = {CLOSED: "закрыто", OPENING: "открывается", OPEN: "открыто",
-          CLOSING: "закрывается", HOLD: "удержание"}
+LAYOUT = {
+    CLOSED: "закрыто",
+    OPENING: "открывается",
+    OPEN: "открыто",
+    CLOSING: "закрывается",
+    HOLD: "удержание",
+}
 MOVE_TICKS = 2
 
 
@@ -22,14 +28,38 @@ class Barrier(Device):
         self._stuck_ticks = 0
         self.add_signal(Signal("open_cmd", "Открыть", "switch", "rw", "capability", 0))
         self.add_signal(Signal("close_cmd", "Закрыть", "push_time", "w", "capability", 0))
-        self.add_signal(Signal("hold_time", "Держать открытым, c", "counter", "rw",
-                               "setting", default_hold, "c", 0, 300))
-        self.add_signal(Signal("state", "Состояние стрелы", "list", "r", "property",
-                               CLOSED, layout=LAYOUT))
-        self.add_signal(Signal("obstacle", "Предмет под стрелой", "list", "r",
-                               "property", 0, layout={0: "нет", 1: "есть"}))
-        self.add_signal(Signal("alarm", "Авария", "list", "r", "property", 0,
-                               layout={0: "нет", 1: "застревание"}))
+        self.add_signal(
+            Signal(
+                "hold_time",
+                "Держать открытым, c",
+                "counter",
+                "rw",
+                "setting",
+                default_hold,
+                "c",
+                0,
+                300,
+            )
+        )
+        self.add_signal(
+            Signal("state", "Состояние стрелы", "list", "r", "property", CLOSED, layout=LAYOUT)
+        )
+        self.add_signal(
+            Signal(
+                "obstacle",
+                "Предмет под стрелой",
+                "list",
+                "r",
+                "property",
+                0,
+                layout={0: "нет", 1: "есть"},
+            )
+        )
+        self.add_signal(
+            Signal(
+                "alarm", "Авария", "list", "r", "property", 0, layout={0: "нет", 1: "застревание"}
+            )
+        )
         self.add_signal(Signal("cycles", "Циклов открытий", "counter", "r", "property", 0))
 
     def set_obstacle(self, has: bool) -> None:
