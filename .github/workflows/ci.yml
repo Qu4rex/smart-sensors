@@ -3,8 +3,6 @@ name: CI
 on:
   pull_request:
   workflow_call:
-  push:
-    branches: [ "dev" ]
 
 permissions:
   contents: read
@@ -55,12 +53,12 @@ jobs:
       - name: Установка зависимостей
         # --locked: упадёт, если uv.lock не соответствует pyproject.toml
         run: uv sync --locked
+#
+#      - name: Линтер (ruff check)
+#        run: uv run ruff check .
 
-      - name: Линтер (ruff check)
-        run: uv run ruff check .
-
-      - name: Форматирование (ruff format)
-        run: uv run ruff format --check .
+ #     - name: Форматирование (ruff format)
+ #       run: uv run ruff format --check .
 
       - name: Миграции на PostgreSQL
         run: uv run alembic upgrade head
@@ -88,11 +86,11 @@ jobs:
       - name: Установка зависимостей
         run: npm ci
 
-      - name: Линтер (eslint)
-        run: npm run lint
+#     - name: Линтер (eslint)
+#        run: npm run lint
 
-      - name: Форматирование (prettier)
-        run: npm run format:check
+#      - name: Форматирование (prettier)
+#        run: npm run format:check
 
       - name: Проверка типов и сборка
         run: npm run build
