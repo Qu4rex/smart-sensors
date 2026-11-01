@@ -1,13 +1,18 @@
 import asyncio
 import operator
 import time
-from datetime import datetime
+
 from src.services import device_hub
 from src.services.notifications import notify
 
-
-OPS = {"==": operator.eq, "!=": operator.ne, ">": operator.gt,
-       "<": operator.lt, ">=": operator.ge, "<=": operator.le}
+OPS = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    "<": operator.lt,
+    ">=": operator.ge,
+    "<=": operator.le,
+}
 
 rules = {}
 log = []
@@ -22,6 +27,18 @@ def add_rule(rule):
     _next_id += 1
     return rule
 
+
+def update_rule(rule_id, data):
+    if rule_id not in rules:
+        return None
+
+    rule = {"id": rule_id, **data}
+    rules[rule_id] = rule
+    _active.pop(rule_id, None)
+
+    return rule
+
+
 def update_rule(rule_id, data):
     if rule_id not in rules:
         return None
@@ -32,13 +49,13 @@ def update_rule(rule_id, data):
 
 
 def delete_rule(rule_id):
-    """ удаляет правило по id """
+    """удаляет правило по id"""
     rules.pop(rule_id, None)
     _active.pop(rule_id, None)
 
 
 def run_actions(rule):
-    """ отправляет все команды из then и пишет срабатывание в журнал """
+    """отправляет все команды из then и пишет срабатывание в журнал"""
     for action in rule["then"]:
         if action["device"] == "notification":
             notify(rule["name"], str(action["value"]), level="critical", source="rules")
@@ -49,7 +66,7 @@ def run_actions(rule):
 
 
 def check_rules():
-    """ Проверяет все правила. Срабатывает один раз, когда условие стало истинным """
+    """Проверяет все правила. Срабатывает один раз, когда условие стало истинным"""
     for rule_id, rule in list(rules.items()):
         try:
             when = rule["when"]

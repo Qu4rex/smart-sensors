@@ -42,7 +42,6 @@ select = [
 "C4", # comprehensions
 "SIM", # упрощение кода
 "ASYNC",
-"PT", # pytest
 ]
 
 [tool.ruff.format]

@@ -5,10 +5,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.api.v1.router import api_router
 from src.core.config import settings
 from src.core.exceptions import AppError
-
-from src.api.v1.router import api_router
 from src.services.device_hub import tick_loop
 from src.services.rules import rules_loop
 

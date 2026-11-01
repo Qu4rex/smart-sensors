@@ -8,6 +8,7 @@ Auth после open: {"token":...,"event":"authenticate","signals":true}.
 Приём: event!=setValue -> data.devices[].signals обновляют FSM;
 event==setValue -> эхо по id (status failed == отказ).
 """
+
 import asyncio
 import json
 import ssl
@@ -15,16 +16,25 @@ import time
 
 
 def build_auth(token):
-    return json.dumps({"token": token, "event": "authenticate", "signals": True},
-                      separators=(",", ":"))
+    return json.dumps(
+        {"token": token, "event": "authenticate", "signals": True}, separators=(",", ":")
+    )
 
 
 def build_set_value(uniq_id, sn, signal_name, value):
-    return json.dumps({
-        "event": "setValue",
-        "devices": [{"id": uniq_id, "sn": int(sn),
-                     "signals": [{"name": signal_name, "value": str(value)}]}],
-    }, separators=(",", ":"))
+    return json.dumps(
+        {
+            "event": "setValue",
+            "devices": [
+                {
+                    "id": uniq_id,
+                    "sn": int(sn),
+                    "signals": [{"name": signal_name, "value": str(value)}],
+                }
+            ],
+        },
+        separators=(",", ":"),
+    )
 
 
 def parse_message(text):
@@ -70,17 +80,18 @@ class WsHomeClient:
 
     async def run(self, once=False, wait=10):
         import websockets
+
         ctx = ssl._create_unverified_context() if self.insecure else None
-        async with websockets.connect(self.url, ssl=ctx, open_timeout=8,
-                                      ping_interval=None) as ws:
+        async with websockets.connect(self.url, ssl=ctx, open_timeout=8, ping_interval=None) as ws:
             self._ws = ws
             await ws.send(build_auth(self.token))
             deadline = time.time() + wait
             while time.time() < deadline:
                 try:
                     text = await asyncio.wait_for(
-                        ws.recv(), timeout=max(0.5, deadline - time.time()))
-                except asyncio.TimeoutError:
+                        ws.recv(), timeout=max(0.5, deadline - time.time())
+                    )
+                except TimeoutError:
                     break
                 kind, devices = parse_message(text)
                 if kind == "authenticate":
@@ -110,6 +121,7 @@ class WsHomeClient:
 def fetch_wss_address(api_base, token):
     """data.wss[0] из devices/wss/; параметр именно token= (user_token -> гость)."""
     import urllib.request
+
     url = f"{api_base}/devices/wss/?token={token}"
     with urllib.request.urlopen(url, timeout=20) as r:
         data = json.loads(r.read().decode("utf-8"))

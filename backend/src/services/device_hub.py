@@ -18,10 +18,8 @@ NAMES = [
     "elevator",
 ]
 
-devices = {
-    name: REGISTRY[name](serial=f"ctrlaltelite_{name}_01")
-    for name in NAMES
-}
+devices = {name: REGISTRY[name](serial=f"ctrlaltelite_{name}_01") for name in NAMES}
+
 
 async def tick_loop():
     while True:
@@ -29,21 +27,28 @@ async def tick_loop():
             device.step(1)
         await asyncio.sleep(1)
 
+
 def get_state(name):
     return {s.name: s.value for s in devices[name].signals.values()}
 
+
 def send_command(name, signal, value):
     device = devices[name]
-    device.handle_recv({
-        "recv": [{
-            "command": "management",
-            "id": device.serial,
-            signal: value,
-        }]
-    })
+    device.handle_recv(
+        {
+            "recv": [
+                {
+                    "command": "management",
+                    "id": device.serial,
+                    signal: value,
+                }
+            ]
+        }
+    )
+
 
 def set_emergency(name, on):
-    """ имитация аварии устройства: on=True включает, on=False сбрасывает """
+    """имитация аварии устройства: on=True включает, on=False сбрасывает"""
     device = devices[name]
     if name == "leak":
         device.set_wet(on)

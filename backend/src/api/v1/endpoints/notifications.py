@@ -1,7 +1,9 @@
 from fastapi import APIRouter
+
 from src.services import notifications
 
 router = APIRouter(prefix="/notifications")
+
 
 @router.get(
     "",
@@ -10,4 +12,3 @@ router = APIRouter(prefix="/notifications")
 )
 async def get_notifications(after_id: int = 0):
     return notifications.get_new(after_id)
-

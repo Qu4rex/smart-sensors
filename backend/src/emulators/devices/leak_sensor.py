@@ -1,4 +1,5 @@
 """Датчик протечки: wet-автомат + батарея + самотест. Шаблон — device-templates.md."""
+
 from __future__ import annotations
 
 from core import Device, Signal
@@ -12,12 +13,15 @@ class LeakSensor(Device):
         super().__init__(*args, **kwargs)
         self.battery_drain = battery_drain
         self.pending_wet = False
-        self.add_signal(Signal("leak", "Протечка", "list", "r", "property", 0,
-                               layout={0: "нет", 1: "протечка"}))
-        self.add_signal(Signal("battery", "Батарея", "counter", "r", "property",
-                               100, "%", 0, 100))
-        self.add_signal(Signal("tamper", "Вскрытие", "list", "r", "property", 0,
-                               layout={0: "закрыт", 1: "вскрыт"}))
+        self.add_signal(
+            Signal("leak", "Протечка", "list", "r", "property", 0, layout={0: "нет", 1: "протечка"})
+        )
+        self.add_signal(Signal("battery", "Батарея", "counter", "r", "property", 100, "%", 0, 100))
+        self.add_signal(
+            Signal(
+                "tamper", "Вскрытие", "list", "r", "property", 0, layout={0: "закрыт", 1: "вскрыт"}
+            )
+        )
         self.add_signal(Signal("self_test", "Самотест", "push_time", "w", "capability", 0))
 
     def set_wet(self, wet: bool) -> None:
