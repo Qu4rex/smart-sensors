@@ -4,6 +4,7 @@ import { useOutletContext } from 'react-router-dom'
 import { updateProfileRequest } from '../api/auth'
 import type { LayoutContext, UserProfile } from '../components/Layout/Layout'
 import { useTheme } from '../hooks/useTheme'
+import { EnableNotificationsButton } from '../components/Notifications/NotificationsProvider'
 
 export default function SettingsPage() {
   const { profile, setProfile } = useOutletContext<LayoutContext>()
@@ -68,6 +69,8 @@ function SettingsForm({ profile, setProfile }: SettingsFormProps) {
         >
           <span className="switch__thumb" />
         </button>
+        <EnableNotificationsButton />
+
       </div>
 
       <form className="settings__form" onSubmit={handleSubmit}>

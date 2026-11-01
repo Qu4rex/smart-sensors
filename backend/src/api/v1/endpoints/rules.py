@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from src.services import rules
 from src.schemas.rules import When, Action, RuleIn
+from src.services.notifications import notify
 
 router = APIRouter(prefix="/rules")
 
