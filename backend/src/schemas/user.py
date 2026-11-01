@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-LOGIN_RE = re.compile(r'^(?:\+7|8|7)\d{10}$')
+LOGIN_RE = re.compile(r"^(?:\+7|8|7)\d{10}$")
 PASSWORD_RE = re.compile(r"^[!-~]{8,18}$")
 
 
@@ -27,8 +27,7 @@ class UserCreate(BaseModel):
     def validate_login(cls, value: str) -> str:
         if not LOGIN_RE.fullmatch(value):
             raise ValueError(
-                "Логин: требуется в формате номера телефона, "
-                "дальше только латинские буквы и цифры"
+                "Логин: требуется в формате номера телефона, дальше только латинские буквы и цифры"
             )
         return value
 

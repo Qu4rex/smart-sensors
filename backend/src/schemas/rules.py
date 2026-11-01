@@ -7,10 +7,12 @@ class When(BaseModel):
     op: str = "=="
     value: int | float | str
 
+
 class Action(BaseModel):
     device: str
     signal: str
     value: int | float | str
+
 
 class RuleIn(BaseModel):
     name: str

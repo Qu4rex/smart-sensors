@@ -27,7 +27,8 @@ async def login(data: LoginRequest, service: AuthServiceDep):
 
 @router.post("/token", response_model=Token)
 async def login_form(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()], service: AuthServiceDep):
+    form: Annotated[OAuth2PasswordRequestForm, Depends()], service: AuthServiceDep
+):
     user = await service.authenticate_user(form.username, form.password)
     """Вход через форму (OAuth2). Нужен для кнопки Authorize в Swagger, фронтенд шлёт /login."""
 
@@ -42,7 +43,11 @@ async def read_me(current_user: CurrentUserDep):
 
 
 @router.patch("/me", response_model=UserRead)
-async def update_me(data: UserUpdate, current_user: CurrentUserDep, service: AuthServiceDep,):
+async def update_me(
+    data: UserUpdate,
+    current_user: CurrentUserDep,
+    service: AuthServiceDep,
+):
     """Обновляет имя и/или фамилию текущего пользователя."""
 
     return await service.update_profile(current_user, data)

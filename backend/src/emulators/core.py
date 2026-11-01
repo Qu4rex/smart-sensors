@@ -1,6 +1,8 @@
 """Ядро эмулятора: сигналы Ujin, конечный автомат устройства, приём команд."""
+
 from __future__ import annotations
 
+import contextlib
 import json
 import threading
 from collections.abc import Callable
@@ -120,10 +122,10 @@ class Device:
             self.log(f"[{self.model}] ws: неизвестный сигнал {name}")
             return
         if sig.writable:
-            try:
-                value = float(value) if isinstance(value, str) and "." in value else int(float(value))
-            except (TypeError, ValueError):
-                pass
+            with contextlib.suppress(TypeError, ValueError):
+                value = (
+                    float(value) if isinstance(value, str) and "." in value else int(float(value))
+                )
             sig.value = value
             self.log(f"[{self.model}] ws-команда: {name}={value}")
             self.on_command(name, value)
@@ -150,9 +152,13 @@ class Device:
                 if sig.management == "rw":
                     self._dirty.add(name)
                 self.log(f"[{self.model}] команда: {name}={value}")
-                print("JOURNAL " + json.dumps(
-                    {"call": "command", "name": name, "value": value},
-                    ensure_ascii=False), flush=True)
+                print(
+                    "JOURNAL "
+                    + json.dumps(
+                        {"call": "command", "name": name, "value": value}, ensure_ascii=False
+                    ),
+                    flush=True,
+                )
                 self.on_command(name, value)
 
     def step(self, dt: int = 1) -> None:
@@ -173,8 +179,7 @@ class Device:
         for name in sorted(self._dirty):
             sig = self.signals[name]
             if sig.publishable:
-                batch.append({"signal": name,
-                              "value": wire_value(sig)})
+                batch.append({"signal": name, "value": wire_value(sig)})
         self._dirty.clear()
         if batch and self.client is not None:
             self.client.update_signals(self.serial, self.model, batch)
@@ -197,11 +202,11 @@ class CommandServer:
         def convert(raw: str):
             try:
                 return int(raw)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
             try:
                 return float(raw)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 return raw
 
         class Handler(BaseHTTPRequestHandler):
@@ -255,9 +260,9 @@ class CommandServer:
                         form = parse_qs(body.decode("utf-8"))
                         name = (form.get("signal") or [""])[0]
                         value = convert((form.get("value") or [""])[0])
-                        dev.handle_recv({"recv": [{"command": "management",
-                                                   "id": dev.serial,
-                                                   name: value}]})
+                        dev.handle_recv(
+                            {"recv": [{"command": "management", "id": dev.serial, name: value}]}
+                        )
                         self._send({"error": 0})
                         return
                     dev.handle_recv(json.loads(body))
@@ -292,20 +297,25 @@ def self_dashboard(dev: Device) -> str:
     rows = []
     options = []
     for s in dev.signals.values():
-        rows.append(f"<tr><td>{s.title}</td><td><code>{s.name}</code></td>"
-                    f"<td>{s.value}</td><td>{s.management}</td></tr>")
+        rows.append(
+            f"<tr><td>{s.title}</td><td><code>{s.name}</code></td>"
+            f"<td>{s.value}</td><td>{s.management}</td></tr>"
+        )
         if s.writable:
             options.append(f"<option value='{s.name}'>{s.title}</option>")
     form = ""
     if options:
-        form = ("<form method='POST' action='/command'>"
-                f"<select name='signal'>{''.join(options)}</select>"
-                "<input name='value' placeholder='значение'>"
-                "<button>Отправить</button></form>")
-    return ("<!doctype html><html><head><meta charset='utf-8'>"
-            "<meta http-equiv='refresh' content='2'>"
-            f"<title>{dev.title} {dev.serial}</title></head><body>"
-            f"<h2>{dev.title} <small>{dev.serial}</small></h2>"
-            "<table border=1 cellpadding=4><tr><th>title</th><th>signal</th>"
-            "<th>value</th><th>mgmt</th></tr>" + "".join(rows) +
-            "</table>" + form + "</body></html>")
+        form = (
+            "<form method='POST' action='/command'>"
+            f"<select name='signal'>{''.join(options)}</select>"
+            "<input name='value' placeholder='значение'>"
+            "<button>Отправить</button></form>"
+        )
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'>"
+        "<meta http-equiv='refresh' content='2'>"
+        f"<title>{dev.title} {dev.serial}</title></head><body>"
+        f"<h2>{dev.title} <small>{dev.serial}</small></h2>"
+        "<table border=1 cellpadding=4><tr><th>title</th><th>signal</th>"
+        "<th>value</th><th>mgmt</th></tr>" + "".join(rows) + "</table>" + form + "</body></html>"
+    )

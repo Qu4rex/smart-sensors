@@ -20,7 +20,7 @@ def _load(path, name):
 class TestBuildSource(unittest.TestCase):
     def test_three_groups_in_skeleton(self):
         code = nd.build_source("valve", "Клапан", [dict(s) for s in nd._EXAMPLE])
-        self.assertIn('class ValveDevice(Device)', code)
+        self.assertIn("class ValveDevice(Device)", code)
         self.assertIn("свойство", code)  # в докстринге подсказка про группы
         for kw in ("tick", "on_command", "add_signal"):
             self.assertIn(kw, code)
