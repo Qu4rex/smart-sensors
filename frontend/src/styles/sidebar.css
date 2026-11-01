@@ -220,7 +220,34 @@
     z-index: 30;
     width: min(240px, calc(100vw - var(--gap) * 2));
     height: 100vh;
+    overflow: hidden;
     border-radius: 0 20px 20px 0;
+  }
+
+  .sidebar__top {
+    margin-bottom: 16px;
+  }
+
+  .menu {
+    gap: 3px;
+  }
+
+  .menu__item {
+    height: 42px;
+  }
+
+  .sidebar__bottom {
+    margin-top: 10px;
+    gap: 3px;
+    padding-top: 10px;
+  }
+
+  .sidebar__line {
+    margin-bottom: 8px;
+  }
+
+  .profile {
+    min-height: 42px;
   }
 
   .sidebar--collapsed {
