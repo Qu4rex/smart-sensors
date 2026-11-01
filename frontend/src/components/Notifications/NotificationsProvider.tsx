@@ -44,7 +44,8 @@ type Toast = {
 }
 
 const POLL_INTERVAL_MS = 2000
-const SYSTEM_ONLY_WHEN_HIDDEN = true
+/* true - системное уведомление только когда вкладка скрыта; false - всегда */
+const SYSTEM_ONLY_WHEN_HIDDEN = false
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null)
 
@@ -53,10 +54,14 @@ function getPermission(): Permission {
 }
 
 async function showSystemNotification(title: string, body: string, tag: string) {
-  const options = { body, tag }
-  const reg = await navigator.serviceWorker?.getRegistration()
-  if (reg) await reg.showNotification(title, options)
-  else new Notification(title, options)
+  const options: NotificationOptions = { body, tag }
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration()
+    if (reg) await reg.showNotification(title, options)
+    else new Notification(title, options)
+  } catch (error) {
+    console.warn('[notifications] не удалось показать системное уведомление', error)
+  }
 }
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
@@ -109,6 +114,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         }
         items.forEach(showServerNotification)
       } catch {
+        // бэкенд временно недоступен - попробуем на следующем опросе
       }
     }
 
@@ -155,12 +161,48 @@ export function useNotifications() {
   return ctx
 }
 
-export function EnableNotificationsButton({ className }: { className?: string }) {
+export function EnableNotificationsButton() {
   const { permission, enableSystemNotifications } = useNotifications()
-  if (permission !== 'default') return null
+
+  let hint: string
+  if (permission === 'unsupported') {
+    hint =
+      'Браузер не поддерживает уведомления. Откройте сайт через localhost или https.'
+  } else if (permission === 'denied') {
+    hint =
+      'Уведомления заблокированы. Нажмите на значок замка слева от адреса, разрешите «Уведомления» и обновите страницу. Также проверьте настройки уведомлений в самой ОС (Windows: «Не беспокоить» / Фокусировка внимания).'
+  } else if (permission === 'granted') {
+    hint = 'Уведомления браузера включены.'
+  } else {
+    hint = 'Браузер пока не разрешил показывать уведомления.'
+  }
+
   return (
-    <button type="button" className={className} onClick={() => void enableSystemNotifications()}>
-      Включить уведомления браузера
-    </button>
+    <div className="settings__row">
+      <div>
+        <p className="settings__title">Уведомления браузера</p>
+        <p className="settings__hint">{hint}</p>
+      </div>
+
+      {permission === 'default' && (
+        <button type="button" onClick={() => void enableSystemNotifications()}>
+          Включить
+        </button>
+      )}
+      {permission === 'granted' && (
+        <button
+          type="button"
+          onClick={() =>
+            void showSystemNotification(
+              'Тестовое уведомление',
+              'Если вы это видите, уведомления браузера работают',
+              `test-${Date.now()}`,
+            )
+          }
+        >
+          Проверить
+        </button>
+      )}
+    </div>
   )
 }

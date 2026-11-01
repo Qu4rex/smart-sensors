@@ -1,7 +1,6 @@
 import asyncio
 import sys
 from pathlib import Path
-from src.services.notifications import notify
 # эмуляторы используют плоские импорты
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "emulators"))
 
@@ -49,12 +48,11 @@ def send_command(name, signal, value):
 
 def set_emergency(name, on):
     """имитация аварии устройства: on=True включает, on=False сбрасывает"""
-    notify("Лифт", "Авария в лифте", level="critical", source="elevator")
     device = devices[name]
     if name == "leak":
         device.set_wet(on)
     elif name == "fire":
-        device.set_emergency(on)
+        device.set_smoke(100 if on else 0)
     elif name == "barrier":
         device.set_obstacle(on)
         device.set_value("alarm", 1 if on else 0)
