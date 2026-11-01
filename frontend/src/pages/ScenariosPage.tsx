@@ -124,6 +124,17 @@ function parseValue(value: string) {
   return Number.isFinite(number) ? number : trimmed
 }
 
+/* текст уведомления всегда строка (даже если ввели только цифры) */
+function parseNotificationText(value: string) {
+  const trimmed = value.trim()
+
+  if (trimmed === '') {
+    throw new Error('Введите текст уведомления')
+  }
+
+  return trimmed
+}
+
 /* строка действия в карточке сценария */
 function ScenarioRow({ device, text }: { device: string; text: string }) {
   const label = capitalize(getDeviceName(device))
@@ -413,7 +424,14 @@ useEffect(() => {
   }
 
   function changeActionDevice(key: number, device: string) {
-    updateAction(key, { device, signal: '' })
+    const previous = actions.find((action) => action.key === key)?.device
+    const patch: Partial<ActionDraft> = { device, signal: '' }
+
+    // у уведомления значение - это текст, у устройств - число/команда
+    if (device === 'notification') patch.value = ''
+    else if (previous === 'notification') patch.value = '1'
+
+    updateAction(key, patch)
     void loadDeclaration(device)
   }
 
@@ -450,11 +468,6 @@ useEffect(() => {
   async function saveRule(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (actions.some((action) => action.device === 'notification')) {
-      setFormError('Действие «Уведомление» пока не реализовано')
-      return
-    }
-
     setSaving(true)
     setFormError('')
 
@@ -467,11 +480,15 @@ useEffect(() => {
           op: operator,
           value: parseValue(triggerValue),
         },
-        then: actions.map((action) => ({
-          device: action.device,
-          signal: action.signal.trim(),
-          value: parseValue(action.value),
-        })),
+        then: actions.map((action) =>
+          action.device === 'notification'
+            ? { device: 'notification', signal: '', value: parseNotificationText(action.value) }
+            : {
+                device: action.device,
+                signal: action.signal.trim(),
+                value: parseValue(action.value),
+              },
+        ),
       }
 
       if (editingId === null) {
@@ -503,20 +520,7 @@ useEffect(() => {
           <h1 className="panel__title">Сценарии автоматизации</h1>
           <p className="panel__text">Правила взаимодействия между устройствами</p>
         </div>
-        <div className="scenarios__controls">
-          <span className="scenarios__count">{pluralizeScenarios(rules.length)}</span>
-          <div className="scenarios__toolbar">
-            {showForm ? (
-              <button type="button" className="scenarios__button" onClick={closeForm}>
-                Отмена
-              </button>
-            ) : (
-              <button type="button" className="scenarios__button scenarios__button--accent" onClick={openCreateForm}>
-                + Создать сценарий
-              </button>
-            )}
-          </div>
-        </div>
+        <span className="scenarios__count">{pluralizeScenarios(rules.length)}</span>
       </header>
 
       <div className={`scenarios__notice-slot${noticeOpen ? ' is-open' : ''}`}>
@@ -527,6 +531,18 @@ useEffect(() => {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="scenarios__toolbar">
+        {showForm ? (
+          <button type="button" className="scenarios__button" onClick={closeForm}>
+            Отмена
+          </button>
+        ) : (
+          <button type="button" className="scenarios__button scenarios__button--accent" onClick={openCreateForm}>
+            + Создать сценарий
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -648,8 +664,16 @@ useEffect(() => {
                     </label>
 
                     <label className="scenario-field">
-                      <span className="scenario-field__caption">Значение</span>
-                      <input value={action.value} onChange={(event) => updateAction(action.key, { value: event.target.value })} required />
+                      <span className="scenario-field__caption">
+                        {action.device === 'notification' ? 'Текст уведомления' : 'Значение'}
+                      </span>
+                      <input
+                        value={action.value}
+                        onChange={(event) => updateAction(action.key, { value: event.target.value })}
+                        placeholder={action.device === 'notification' ? 'Например, Обнаружена протечка!' : undefined}
+                        maxLength={action.device === 'notification' ? 200 : undefined}
+                        required
+                      />
                     </label>
                   </div>
 
@@ -722,7 +746,11 @@ useEffect(() => {
                   <ScenarioRow
                     key={`${action.device}-${action.signal}-${index}`}
                     device={action.device}
-                    text={`${signalTitle(action.device, action.signal)}: ${action.value}`}
+                    text={
+                      action.device === 'notification'
+                        ? `«${action.value}»`
+                        : `${signalTitle(action.device, action.signal)}: ${action.value}`
+                    }
                   />
                 ))}
               </div>

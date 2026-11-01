@@ -371,7 +371,7 @@ export default function Page2() {
                 setTestValue(event.target.value)
                 clearResult()
               }}
-              placeholder="Оставьте пустым, чтобы взять текущее значение устройства"
+              placeholder="Введите значение устройства"
               aria-label="Показание датчика"
             />
           </div>

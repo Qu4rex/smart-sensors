@@ -101,7 +101,7 @@ function DeviceSwitch({ type, state, onToggle }: { type: string; state: Record<s
   return <button className={`device-card__switch${isOn ? ' device-card__switch--on' : ''}`} type="button" role="switch" aria-checked={isOn} aria-label={label} onClick={onToggle}><span /></button>
 }
 
-function MetricTrend({ values, detailed = false, label }: { values: number[]; detailed?: boolean; label: string }) {
+function MetricTrend({ values, detailed = false, label, unit }: { values: number[]; detailed?: boolean; label: string; unit: string }) {
   if (values.length < 2) return <p className={detailed ? 'thermostat-trend__empty' : 'thermostat-trend'}>{detailed ? 'График начнёт формироваться после следующего минутного измерения.' : ''}</p>
   const min = Math.min(...values)
   const max = Math.max(...values)
@@ -111,9 +111,19 @@ function MetricTrend({ values, detailed = false, label }: { values: number[]; de
     const y = 30 - ((value - min) / range) * 24
     return `${x},${y}`
   }).join(' ')
-  return <svg className={detailed ? 'thermostat-trend thermostat-trend--details' : 'thermostat-trend'} viewBox="0 0 100 34" preserveAspectRatio="none" aria-label={label}>
-    <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+  const formatValue = (value: number) => `${unit === 'ppm' ? Math.round(value) : value.toFixed(1)} ${unit}`
+  if (!detailed) return <svg className="thermostat-trend" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label={label}><polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  return <div className="metric-chart" aria-label={label}>
+    <div className="metric-chart__y"><span>{formatValue(max)}</span><span>{formatValue(min)}</span></div>
+    <div className="metric-chart__body">
+      <svg className="thermostat-trend thermostat-trend--details" viewBox="0 0 100 38" preserveAspectRatio="none">
+        <line className="metric-chart__axis" x1="0" y1="31" x2="100" y2="31" vectorEffect="non-scaling-stroke" />
+        {Array.from({ length: 24 }, (_, index) => <line className="metric-chart__tick" key={index} x1={(index / 23) * 100} y1="31" x2={(index / 23) * 100} y2="35" vectorEffect="non-scaling-stroke" />)}
+        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div className="metric-chart__x"><span>24 мин назад</span><span>сейчас</span></div>
+    </div>
+  </div>
 }
 
 function MetricSparkline({ values, label }: { values: number[]; label: string }) {
@@ -160,6 +170,8 @@ export default function Page1() {
   const [isSavingTargetCo2, setIsSavingTargetCo2] = useState(false)
   const [fanSpeed, setFanSpeed] = useState('')
   const [isSavingFanSpeed, setIsSavingFanSpeed] = useState(false)
+  const [brightness, setBrightness] = useState('')
+  const [isSavingBrightness, setIsSavingBrightness] = useState(false)
   const [isDeviceMenuOpen, setIsDeviceMenuOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -281,6 +293,7 @@ export default function Page1() {
         if (device.templateKey === 'thermostat') setTargetTemperature(String(details.state.target_temp ?? ''))
         if (device.templateKey === 'ventilation') setTargetCo2(String(details.state.co2_target ?? ''))
         if (device.templateKey === 'ventilation') setFanSpeed(String(details.state.fan_speed ?? ''))
+        if (device.templateKey === 'light') setBrightness(String(details.state.brightness ?? ''))
       })
       .catch(() => setDetailsError('Не удалось загрузить данные устройства'))
   }
@@ -398,6 +411,23 @@ export default function Page1() {
       setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить скорость вентилятора')
     } finally {
       setIsSavingFanSpeed(false)
+    }
+  }
+
+  const saveBrightness = async () => {
+    const value = Number(brightness)
+    if (!Number.isInteger(value) || value < 1 || value > 100) return
+    setIsSavingBrightness(true)
+    setDetailsError('')
+    try {
+      const result = await sendDeviceCommand('light', 'brightness', value)
+      setDeviceDetails((current) => current ? { ...current, state: { ...current.state, ...result.state } } : current)
+      setDeviceOptions((current) => current.map((device) => device.key === 'light' ? { ...device, state: { ...device.state, ...result.state } } : device))
+      setBrightness(String(result.state.brightness ?? value))
+    } catch (error) {
+      setDetailsError(error instanceof Error ? error.message : 'Не удалось изменить яркость')
+    } finally {
+      setIsSavingBrightness(false)
     }
   }
 
@@ -591,6 +621,12 @@ export default function Page1() {
                         <input type="number" min="0" max="6" step="1" value={fanSpeed} onChange={(event) => setFanSpeed(event.target.value)} aria-label="Скорость вентилятора" />
                         <button type="button" onClick={saveFanSpeed} disabled={isSavingFanSpeed || fanSpeed === ''}>ОК</button>
                       </dd>
+                    ) : selectedDevice.templateKey === 'light' && signal.name === 'brightness' ? (
+                      <dd className="device-details__target-control">
+                        <input type="number" min="1" max="100" step="1" value={brightness} onChange={(event) => setBrightness(event.target.value)} aria-label="Яркость светильника" />
+                        <span>%</span>
+                        <button type="button" onClick={saveBrightness} disabled={isSavingBrightness || brightness === ''}>ОК</button>
+                      </dd>
                     ) : <dd>{formatSignalValue(signal)}</dd>}
                   </div>
                 ))}
@@ -599,13 +635,13 @@ export default function Page1() {
             {deviceDetails && selectedDevice.templateKey === 'thermostat' && (
               <section className="thermostat-history">
                 <h2>Температура за последние 24 минуты</h2>
-                <MetricTrend values={temperatureHistory.map((sample) => sample.value)} detailed label="Изменение температуры" />
+                <MetricTrend values={temperatureHistory.map((sample) => sample.value)} detailed label="Изменение температуры" unit="°C" />
               </section>
             )}
             {deviceDetails && selectedDevice.templateKey === 'ventilation' && (
               <section className="thermostat-history">
                 <h2>CO₂ за последние 24 минуты</h2>
-                <MetricTrend values={co2History.map((sample) => sample.value)} detailed label="Изменение уровня CO₂" />
+                <MetricTrend values={co2History.map((sample) => sample.value)} detailed label="Изменение уровня CO₂" unit="ppm" />
               </section>
             )}
             {isEditingName && <button type="button" className="device-modal__save" onClick={saveDeviceName} disabled={isSavingName || !editedName.trim()}>Сохранить</button>}

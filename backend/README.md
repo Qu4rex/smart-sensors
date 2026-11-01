@@ -1,7 +1,7 @@
 # Backend
 
-FastAPI + SQLAlchemy 2 (async, драйвер asyncpg) + Alembic. База: PostgreSQL. Менеджер пакетов: [uv](https://docs.astral.sh/uv/).
-Python версии из `.python-version`.
+FastAPI + SQLAlchemy 2 (async, драйвер asyncpg) + Alembic. База: PostgreSQL. 
+Менеджер пакетов: [uv](https://docs.astral.sh/uv/).
 
 ## Структура
 
@@ -12,7 +12,7 @@ backend/
 │   │   ├── deps.py          # зависимости FastAPI (сессия, CRUD, сервисы, текущий пользователь)
 │   │   └── v1/
 │   │       ├── router.py    # собирает все роутеры под /api/v1
-│   │       └── endpoints/   # эндпоинты: health.py, auth.py
+│   │       └── endpoints/   # эндпоинты: health.py, auth.py, devices, rooms, rules, notifications
 │   ├── core/                # config.py (настройки), security.py (JWT, пароли), exceptions.py
 │   ├── crud/                # запросы к БД, по классу на сущность
 │   ├── db/                  # base.py (Base, TimestampMixin), session.py (engine, сессия)
@@ -21,7 +21,6 @@ backend/
 │   ├── services/            # бизнес-логика
 │   └── main.py              # точка входа FastAPI
 ├── migration/               # Alembic: env.py и versions/
-├── tests/                   # pytest 
 ├── alembic.ini
 ├── pyproject.toml           # зависимости, настройки ruff и pytest
 └── .env.example
@@ -61,19 +60,6 @@ uv run uvicorn src.main:app --reload --port 8000
 - Проверка: http://localhost:8000/api/v1/health
 - Swagger: http://localhost:8000/docs
 
-## API авторизации
-
-| Метод | Путь | Описание |
-|-------|------|----------|
-| POST | `/api/v1/auth/register` | регистрация (`username` или `login`, `password`) |
-| POST | `/api/v1/auth/login` | вход (JSON), `remember: true` даёт долгий токен |
-| POST | `/api/v1/auth/token` | вход через форму OAuth2 (для кнопки Authorize в Swagger) |
-| POST | `/api/v1/auth/logout` | отзывает токен (он попадает в таблицу `revoked_tokens`) |
-
-Ошибки приложения приходят как `{"detail": "...", "code": "..."}`.
-Правила логина и пароля (`schemas/user.py`) совпадают с frontend (`frontend/src/utils/validation.ts`),
-меняйте их в обоих местах.
-
 ## Миграции
 
 ```bash
@@ -86,12 +72,3 @@ uv run alembic check                                          # модели и 
 Автогенерация видит только модели, импортированные в `src/models/__init__.py`.
 Новую модель обязательно добавьте туда. Всегда просматривайте созданный файл перед коммитом.
 CI запускает `alembic check` и упадёт, если вы изменили модель и забыли миграцию.
-
-
-## Тесты и качество кода
-
-```bash
-uv run pytest                  # тесты
-uv run ruff check .            # линтер
-uv run ruff format .           # автоформатирование
-```
