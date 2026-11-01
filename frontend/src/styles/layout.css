@@ -40,6 +40,21 @@
   padding: clamp(1rem, 3vw, 2rem);
 }
 
+.devices-panel__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.devices-panel__greeting {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-weight: 500;
+}
+
 .room-tabs {
   width: fit-content;
   display: flex;
@@ -974,6 +989,10 @@
   .devices-panel {
     padding: 12px;
     overflow: hidden;
+  }
+
+  .devices-panel__greeting {
+    display: none;
   }
 
   .room-tabs {
