@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Query
-#from pydantic import BaseModel
-
+from src.services.notifications import notify
 from src.services import device_hub
 from src.schemas.devices import Command
 router = APIRouter(prefix="/devices")

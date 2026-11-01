@@ -3,6 +3,8 @@ import operator
 import time
 from datetime import datetime
 from src.services import device_hub
+from src.services.notifications import notify
+
 
 OPS = {"==": operator.eq, "!=": operator.ne, ">": operator.gt,
        "<": operator.lt, ">=": operator.ge, "<=": operator.le}
@@ -40,9 +42,11 @@ def delete_rule(rule_id):
 def run_actions(rule):
     """ отправляет все команды из then и пишет срабатывание в журнал """
     for action in rule["then"]:
-        device_hub.send_command(action["device"], action["signal"], action["value"])
-    now = datetime.now()
-    log.append({"time": now.strftime("%Y-%m-%d %H:%M:%S"), "rule": rule["name"], "then": rule["then"]})
+        if action["device"] == "notification":
+            notify(rule["name"], str(action["value"]), level="critical", source="rules")
+        else:
+            device_hub.send_command(action["device"], action["signal"], action["value"])
+    log.append({"time": time.strftime("%H:%M:%S"), "rule": rule["name"], "then": rule["then"]})
     del log[:-50]
 
 
@@ -54,6 +58,7 @@ def check_rules():
             value = device_hub.get_state(when["device"])[when["signal"]]
             now = OPS[when["op"]](value, when["value"])
             if now and not _active.get(rule_id):
+                notify("Лифт", "Авария в лифте", level="critical", source="elevator")
                 run_actions(rule)
             _active[rule_id] = now
         except Exception as exc:
