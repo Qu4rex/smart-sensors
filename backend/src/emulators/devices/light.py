@@ -3,6 +3,7 @@
 Свойства: состояние, мощность; возможность: вкл/выкл, яркость; настройка:
 таймер авто-выключения.
 """
+
 from __future__ import annotations
 
 from core import Device, Signal
@@ -15,15 +16,27 @@ class Light(Device):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._timer = 0
-        self.add_signal(Signal("lamp", "Свет", "switch", "rw", "capability", 0,
-                               layout={0: "выкл", 1: "вкл"}))
-        self.add_signal(Signal("brightness", "Яркость", "range", "rw", "capability",
-                               100, "%", 1, 100))
+        self.add_signal(
+            Signal("lamp", "Свет", "switch", "rw", "capability", 0, layout={0: "выкл", 1: "вкл"})
+        )
+        self.add_signal(
+            Signal("brightness", "Яркость", "range", "rw", "capability", 100, "%", 1, 100)
+        )
         self.add_signal(Signal("power_w", "Мощность", "graph", "r", "property", 0.0, "Вт"))
-        self.add_signal(Signal("energy_kwh", "Энергия", "counter", "r", "property",
-                               0.0, "кВт·ч"))
-        self.add_signal(Signal("offline_timeout", "Авто-выкл через, с (0=выкл)",
-                               "counter", "rw", "setting", 0, "с", 0, 3600))
+        self.add_signal(Signal("energy_kwh", "Энергия", "counter", "r", "property", 0.0, "кВт·ч"))
+        self.add_signal(
+            Signal(
+                "offline_timeout",
+                "Авто-выкл через, с (0=выкл)",
+                "counter",
+                "rw",
+                "setting",
+                0,
+                "с",
+                0,
+                3600,
+            )
+        )
 
     def on_command(self, name, value) -> None:
         if name == "lamp":

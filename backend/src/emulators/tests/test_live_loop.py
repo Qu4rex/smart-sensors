@@ -1,4 +1,5 @@
 """R-06: live_loop.run_once — один и тот же task исполняется один раз."""
+
 import os
 import sys
 import unittest
@@ -32,9 +33,17 @@ class TestDedup(unittest.TestCase):
         seen = {}
         for i in infos:
             c.info = i
-            run_once(c, "ust", "1", "e", "parkcloud_device",
-                     "integrations_devices", "integrations_devices_",
-                     lambda s, v: c.applied.append((s, v)), seen)
+            run_once(
+                c,
+                "ust",
+                "1",
+                "e",
+                "parkcloud_device",
+                "integrations_devices",
+                "integrations_devices_",
+                lambda s, v: c.applied.append((s, v)),
+                seen,
+            )
         return c
 
     def test_same_task_once(self):
@@ -56,9 +65,16 @@ class TestDedup(unittest.TestCase):
         # обратная совместимость: run_once без seen работает как раньше
         c = FakeClient()
         c.info = info(1, 0, dt=1)
-        run_once(c, "ust", "1", "e", "parkcloud_device",
-                 "integrations_devices", "integrations_devices_",
-                 lambda s, v: c.applied.append(s))
+        run_once(
+            c,
+            "ust",
+            "1",
+            "e",
+            "parkcloud_device",
+            "integrations_devices",
+            "integrations_devices_",
+            lambda s, v: c.applied.append(s),
+        )
         self.assertEqual(c.applied, ["rele"])
 
 

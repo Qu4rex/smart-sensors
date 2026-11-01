@@ -3,6 +3,7 @@
 Датчики шлют хабу сообщения через внутреннюю очередь процесса; в Ujin публикуется
 один агрегат: leak (max по датчикам), sensors_online, battery (min).
 """
+
 from __future__ import annotations
 
 from collections import deque
@@ -11,7 +12,7 @@ from core import Device, Signal
 
 
 class InternalSensor:
-    def __init__(self, idx: int, hub: "LeakHub"):
+    def __init__(self, idx: int, hub: LeakHub):
         self.idx = idx
         self.hub = hub
         self.wet = False
@@ -34,17 +35,40 @@ class LeakHub(Device):
         super().__init__(*args, **kwargs)
         self.internal_queue = deque()
         self.sensors = [InternalSensor(i + 1, self) for i in range(sensors)]
-        self.add_signal(Signal("leak", "Протечка (агрегат)", "list", "r", "property", 0,
-                               layout={0: "нет", 1: "протечка"}))
-        self.add_signal(Signal("leak_sensors", "Датчики (битовая маска)", "text", "r",
-                               "property", "0"))
-        self.add_signal(Signal("sensors_online", "Датчиков онлайн", "counter", "r",
-                               "property", sensors, "", 0, sensors))
-        self.add_signal(Signal("sensors_total", "Датчиков всего", "counter", "r",
-                               "system", sensors))
+        self.add_signal(
+            Signal(
+                "leak",
+                "Протечка (агрегат)",
+                "list",
+                "r",
+                "property",
+                0,
+                layout={0: "нет", 1: "протечка"},
+            )
+        )
+        self.add_signal(
+            Signal("leak_sensors", "Датчики (битовая маска)", "text", "r", "property", "0")
+        )
+        self.add_signal(
+            Signal(
+                "sensors_online",
+                "Датчиков онлайн",
+                "counter",
+                "r",
+                "property",
+                sensors,
+                "",
+                0,
+                sensors,
+            )
+        )
+        self.add_signal(
+            Signal("sensors_total", "Датчиков всего", "counter", "r", "system", sensors)
+        )
         self.add_signal(Signal("mute", "Заглушить сирену", "switch", "rw", "capability", 0))
-        self.add_signal(Signal("siren", "Сирена", "list", "r", "property", 0,
-                               layout={0: "выкл", 1: "звучит"}))
+        self.add_signal(
+            Signal("siren", "Сирена", "list", "r", "property", 0, layout={0: "выкл", 1: "звучит"})
+        )
 
     def sensor(self, idx: int) -> InternalSensor:
         return self.sensors[idx - 1]
