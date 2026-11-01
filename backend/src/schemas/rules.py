@@ -10,7 +10,7 @@ class When(BaseModel):
 
 class Action(BaseModel):
     device: str
-    signal: str
+    signal: str = ""  # для device="notification" сигнал не нужен
     value: int | float | str
 
 
