@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Деплой на сервере. Запускается из GitHub Actions по SSH после копирования файлов,
 # но можно запускать и вручную: bash deploy/deploy.sh
 #
