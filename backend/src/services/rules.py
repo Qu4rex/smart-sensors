@@ -1,10 +1,9 @@
 import asyncio
 import operator
 import time
-from datetime import datetime
+
 from src.services import device_hub
 from src.services.notifications import notify
-
 
 OPS = {"==": operator.eq, "!=": operator.ne, ">": operator.gt,
        "<": operator.lt, ">=": operator.ge, "<=": operator.le}

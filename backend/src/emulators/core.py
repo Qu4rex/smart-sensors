@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import json
 import threading
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Callable, Optional
-from urllib.parse import urlparse, parse_qs
+from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 META_KEYS = ("command", "id", "uniq_id", "token")
 
 
-def wire_value(sig: "Signal") -> Any:
+def wire_value(sig: Signal) -> Any:
     """Мина №1 PULL-CLIENT: платформу 0 не пишет (empty()) — на провод 0.001."""
     v = sig.value
     if v == 0 and isinstance(v, (int, float)) and not sig.zero_safe:
@@ -28,9 +29,9 @@ class Signal:
     kind: str = "property"
     value: Any = 0
     measure: str = ""
-    minimum: Optional[float] = None
-    maximum: Optional[float] = None
-    layout: Optional[dict] = None
+    minimum: float | None = None
+    maximum: float | None = None
+    layout: dict | None = None
     zero_safe: bool = False
 
     @property

@@ -11,7 +11,7 @@ from core import Device, Signal
 
 
 class InternalSensor:
-    def __init__(self, idx: int, hub: "LeakHub"):
+    def __init__(self, idx: int, hub: LeakHub):
         self.idx = idx
         self.hub = hub
         self.wet = False

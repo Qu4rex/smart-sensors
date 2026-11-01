@@ -51,9 +51,7 @@ class Thermostat(Device):
         else:
             want_heat = mode in (HEAT, AUTO)
             want_cool = mode in (COOL, AUTO)
-            if self._active == HEAT and temp >= target + HYSTERESIS:
-                self._active = 0
-            elif self._active == COOL and temp <= target - HYSTERESIS:
+            if self._active == HEAT and temp >= target + HYSTERESIS or self._active == COOL and temp <= target - HYSTERESIS:
                 self._active = 0
             elif self._active == 0 and want_heat and temp <= target - HYSTERESIS:
                 self._active = HEAT

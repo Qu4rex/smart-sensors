@@ -2,12 +2,14 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
-#from pydantic import BaseModel
 
-from src.services import device_hub
 from src.api.deps import CurrentUserDep, SessionDep
 from src.models.user_device import UserDevice
 from src.schemas.devices import Command, StoredDeviceCreate, StoredDeviceRead, StoredDeviceUpdate
+
+#from pydantic import BaseModel
+from src.services import device_hub
+
 router = APIRouter(prefix="/devices")
 
 

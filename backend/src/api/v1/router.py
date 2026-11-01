@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from src.api.v1.endpoints import auth, devices, health, rooms, rules, notifications
 from src.api.deps import get_current_user
+from src.api.v1.endpoints import auth, devices, health, notifications, rooms, rules
 
 api_router = APIRouter()
 

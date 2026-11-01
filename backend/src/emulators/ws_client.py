@@ -80,7 +80,7 @@ class WsHomeClient:
                 try:
                     text = await asyncio.wait_for(
                         ws.recv(), timeout=max(0.5, deadline - time.time()))
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     break
                 kind, devices = parse_message(text)
                 if kind == "authenticate":

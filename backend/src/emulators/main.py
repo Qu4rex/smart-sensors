@@ -12,13 +12,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import time
 
 from devices import REGISTRY
-from core import CommandServer
 from ujin_client import UjinClient
+
+from core import CommandServer
 
 
 def build_parser() -> argparse.ArgumentParser:

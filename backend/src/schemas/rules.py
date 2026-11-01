@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+
+
 class When(BaseModel):
     device: str
     signal: str

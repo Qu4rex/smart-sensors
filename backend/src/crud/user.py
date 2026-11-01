@@ -32,8 +32,8 @@ class UserCRUD:
         await self.session.flush()
         await self.session.refresh(new_user)
         return new_user
-    
-    
+
+
     async def update_profile(
         self,
         user: User,

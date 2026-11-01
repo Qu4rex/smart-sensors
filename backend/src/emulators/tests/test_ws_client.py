@@ -6,8 +6,8 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ws_client  # noqa: E402
-from devices.leak_sensor import LeakSensor  # noqa: E402
 from devices.barrier import Barrier  # noqa: E402
+from devices.leak_sensor import LeakSensor  # noqa: E402
 
 
 class TestWsProtocol(unittest.TestCase):

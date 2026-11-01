@@ -1,13 +1,13 @@
 """Набор эмуляторов устройств."""
-from .leak_sensor import LeakSensor
 from .barrier import Barrier
-from .thermostat import Thermostat
-from .elevator import Elevator
-from .leak_hub import LeakHub
 from .counter import Counter
-from .ventilation import Ventilation
+from .elevator import Elevator
 from .fire import FireDetector
+from .leak_hub import LeakHub
+from .leak_sensor import LeakSensor
 from .light import Light
+from .thermostat import Thermostat
+from .ventilation import Ventilation
 
 REGISTRY = {
     "leak": LeakSensor,

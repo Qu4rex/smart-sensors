@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import urllib.parse
 import urllib.request
-from typing import Optional
 
 
 class UjinClient:
@@ -99,13 +98,13 @@ class UjinClient:
             return json.loads(resp.read().decode("utf-8"))
 
     def create_update_device(self, model: str, title: str = "",
-                             apartment_id: Optional[int] = None,
-                             building_id: Optional[int] = None,
-                             device_ext_id: Optional[str] = None,
-                             path: Optional[str] = None,
-                             mask: Optional[str] = None,
-                             custom_data: Optional[dict] = None,
-                             serialnumber: Optional[str] = None) -> dict:
+                             apartment_id: int | None = None,
+                             building_id: int | None = None,
+                             device_ext_id: str | None = None,
+                             path: str | None = None,
+                             mask: str | None = None,
+                             custom_data: dict | None = None,
+                             serialnumber: str | None = None) -> dict:
         return self._post("/api/import_device/create-update-device/", {
             "model": model,
             "title": title or None,

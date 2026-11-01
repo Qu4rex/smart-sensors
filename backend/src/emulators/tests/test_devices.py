@@ -7,14 +7,15 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core import CommandServer, Device, Signal  # noqa: E402
-from ujin_client import UjinClient  # noqa: E402
 from devices import REGISTRY  # noqa: E402
-from devices.leak_sensor import LeakSensor  # noqa: E402
 from devices.barrier import Barrier  # noqa: E402
-from devices.thermostat import Thermostat  # noqa: E402
 from devices.elevator import Elevator  # noqa: E402
 from devices.leak_hub import LeakHub  # noqa: E402
+from devices.leak_sensor import LeakSensor  # noqa: E402
+from devices.thermostat import Thermostat  # noqa: E402
+from ujin_client import UjinClient  # noqa: E402
+
+from core import CommandServer  # noqa: E402
 
 
 class RecordingClient(UjinClient):
@@ -315,7 +316,6 @@ class TaskLoopTest(unittest.TestCase):
     ]}}
 
     def test_pending_tasks_extracts_only_pending(self):
-        from live_loop import run_once
         got = UjinClient.pending_tasks(self.INFO)
         self.assertEqual(got, {"integrations_devices_open": 1})
 
