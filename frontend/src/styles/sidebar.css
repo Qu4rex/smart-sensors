@@ -215,18 +215,89 @@
 @media (max-width: 900px) {
   .sidebar {
     position: fixed;
-    top: var(--gap);
-    left: var(--gap);
+    top: 0;
+    left: 0;
     z-index: 30;
-    width: min(var(--sidebar-width), calc(100vw - var(--gap) * 2));
+    width: min(240px, calc(100vw - var(--gap) * 2));
+    height: 100vh;
+    overflow: hidden;
+    border-radius: 0 20px 20px 0;
+  }
+
+  .sidebar__top {
+    margin-bottom: 16px;
+  }
+
+  .menu {
+    gap: 3px;
+  }
+
+  .menu__item {
+    height: 42px;
+  }
+
+  .sidebar__bottom {
+    margin-top: 10px;
+    gap: 3px;
+    padding-top: 10px;
+  }
+
+  .sidebar__line {
+    margin-bottom: 8px;
+  }
+
+  .profile {
+    min-height: 42px;
   }
 
   .sidebar--collapsed {
-    width: var(--sidebar-width-collapsed);
+    width: 40px;
+    padding: 10px 5px;
+  }
+
+  .sidebar--collapsed .sidebar__top {
+    margin-bottom: 18px;
+  }
+
+  .sidebar--collapsed .logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sidebar--collapsed .logo img {
+    width: 78px;
+    height: 28px;
+  }
+
+  .sidebar--collapsed .sidebar__toggle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sidebar--collapsed .sidebar__toggle svg,
+  .sidebar--collapsed .menu__item svg,
+  .sidebar--collapsed .profile__info svg,
+  .sidebar--collapsed .profile__logout svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar--collapsed .menu__item,
+  .sidebar--collapsed .profile {
+    min-height: 34px;
+    height: 34px;
+  }
+
+  .sidebar--collapsed .profile__logout {
+    width: 28px;
+    height: 28px;
   }
 
   .content {
-    margin-left: calc(var(--sidebar-width-collapsed) + var(--gap));
+    width: calc(100vw - 40px - var(--gap) * 3);
+    max-width: calc(100vw - 40px - var(--gap) * 3);
+    flex: none;
+    margin-left: 40px;
   }
 
   .backdrop {

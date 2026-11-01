@@ -178,19 +178,20 @@ export function EnableNotificationsButton() {
   }
 
   return (
-    <div className="settings__row">
+    <div className="settings__row settings__notifications">
       <div>
         <p className="settings__title">Уведомления браузера</p>
         <p className="settings__hint">{hint}</p>
       </div>
 
       {permission === 'default' && (
-        <button type="button" onClick={() => void enableSystemNotifications()}>
+        <button className="settings__notifications-button" type="button" onClick={() => void enableSystemNotifications()}>
           Включить
         </button>
       )}
       {permission === 'granted' && (
         <button
+          className="settings__notifications-button"
           type="button"
           onClick={() =>
             void showSystemNotification(
