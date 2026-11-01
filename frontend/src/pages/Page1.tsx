@@ -82,7 +82,7 @@ function DeviceState({ type, state }: { type: DeviceType; state: Record<string, 
   }
   if (type === 'light') return <span className="device-card__status">{Number(value('lamp')) === 1 ? 'Включен' : 'Выключен'}</span>
   if (type === 'thermostat') return <span className="device-card__value">{number('temperature')} <small>°C</small></span>
-  if (type === 'counter') return <span className="device-card__value">{number('total')}</span>
+  if (type === 'counter') return <span className="device-card__value">{number('total')} <small>кВт·ч</small></span>
   if (type === 'leak') return <span className={Number(value('leak')) === 1 ? 'device-card__status device-card__status--alert' : 'device-card__status'}>{Number(value('leak')) === 1 ? 'Протечка' : 'Протечки нет'}</span>
   if (type === 'elevator') return <span className="device-card__value">{number('floor_current')} <small>этаж</small></span>
   if (type === 'ventilation') return <span className="device-card__value">{number('co2')} <small>ppm</small></span>

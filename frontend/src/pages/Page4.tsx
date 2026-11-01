@@ -76,6 +76,7 @@ export default function Page4() {
   }
 
   return <section className="panel rooms-panel" aria-label="Комнаты">
+    <h1 className="rooms-panel__title">Ваши комнаты</h1>
     {rooms.length === 0 ? <p className="panel__text rooms-panel__empty">Нет добавленных комнат</p> : <div className="rooms-grid">
       {rooms.map((room) => <article className="room-card" key={room.id}>
         <span className="room-card__name">{room.name}</span>
