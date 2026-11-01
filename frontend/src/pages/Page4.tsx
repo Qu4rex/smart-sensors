@@ -1,25 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import bathtubImage from '../assets/bathtub.png'
+import bathroomImage from '../assets/bathroom.png'
 import bedroomImage from '../assets/bedroom.png'
 import corridorImage from '../assets/corridor.png'
 import kitchenImage from '../assets/kitchen.png'
 import livingRoomImage from '../assets/living-room.png'
-import outdoorImage from '../assets/outdoor.png'
-import roomImage from '../assets/room.png'
+import streetImage from '../assets/street.png'
 import { listStoredDevices } from '../api/devices'
 import type { LayoutContext } from '../components/Layout/Layout'
 
 function getRoomImage(name: string) {
   const normalizedName = name.toLocaleLowerCase('ru-RU')
   if (normalizedName.includes('кухня')) return kitchenImage
-  if (normalizedName.includes('гостиная')) return livingRoomImage
+  if (normalizedName.includes('гостин')) return livingRoomImage
   if (normalizedName.includes('коридор')) return corridorImage
   if (normalizedName.includes('спальня')) return bedroomImage
-  if (normalizedName.includes('улица')) return outdoorImage
-  if (normalizedName.includes('ванн')) return bathtubImage
-  return roomImage
+  if (normalizedName.includes('улица')) return streetImage
+  if (normalizedName.includes('ванн')) return bathroomImage
+  return livingRoomImage
 }
 
 function deviceCountLabel(count: number) {
