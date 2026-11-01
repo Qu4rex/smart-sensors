@@ -223,6 +223,10 @@
   line-height: 1;
 }
 
+.device-card__content:has(.thermostat-sparkline) .device-card__value {
+  margin-top: 10px;
+}
+
 .device-card__value small {
   font-size: 0.95rem;
   font-weight: 400;
@@ -257,6 +261,56 @@
   background: var(--color-hover);
 }
 
+.thermostat-trend {
+  display: block;
+  width: 100%;
+  height: 34px;
+  color: var(--color-accent);
+}
+
+.thermostat-sparkline {
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  width: min(110px, 100%);
+  height: 28px;
+  margin-top: 9px;
+  color: var(--color-accent);
+}
+
+.thermostat-sparkline span {
+  width: 3px;
+  flex: 1;
+  max-width: 4px;
+  border-radius: 99px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.thermostat-history {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.thermostat-history h2 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.thermostat-trend--details {
+  height: 86px;
+  color: var(--color-accent);
+}
+
+.thermostat-trend__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .modal-backdrop {
   position: fixed;
   z-index: 50;
@@ -283,7 +337,7 @@
 }
 
 .device-modal__subtitle {
-  margin: -16px 0 20px;
+  margin: -16px 0 5px;
   color: var(--color-muted);
 }
 

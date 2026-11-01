@@ -21,6 +21,10 @@ type Device = {
   room: string | null
 }
 
+type TemperatureSample = { time: number; value: number }
+const TEMPERATURE_HISTORY_KEY = 'smart-home:thermostat-minute-history'
+const CO2_HISTORY_KEY = 'smart-home:ventilation-minute-history'
+
 const deviceImages: Record<string, string> = {
   barrier: barrierImage,
   thermostat: thermostatImage,
@@ -96,10 +100,47 @@ function DeviceSwitch({ type, state, onToggle }: { type: string; state: Record<s
   return <button className={`device-card__switch${isOn ? ' device-card__switch--on' : ''}`} type="button" role="switch" aria-checked={isOn} aria-label={label} onClick={onToggle}><span /></button>
 }
 
+function MetricTrend({ values, detailed = false, label }: { values: number[]; detailed?: boolean; label: string }) {
+  if (values.length < 2) return <p className={detailed ? 'thermostat-trend__empty' : 'thermostat-trend'}>{detailed ? 'График начнёт формироваться после следующего минутного измерения.' : ''}</p>
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const points = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * 100
+    const y = 30 - ((value - min) / range) * 24
+    return `${x},${y}`
+  }).join(' ')
+  return <svg className={detailed ? 'thermostat-trend thermostat-trend--details' : 'thermostat-trend'} viewBox="0 0 100 34" preserveAspectRatio="none" aria-label={label}>
+    <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+}
+
+function MetricSparkline({ values, label }: { values: number[]; label: string }) {
+  if (values.length < 2) return <div className="thermostat-sparkline" aria-hidden="true" />
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  return <div className="thermostat-sparkline" aria-label={label}>
+    {values.map((value, index) => <span key={index} style={{ height: `${8 + ((value - min) / range) * 18}px` }} />)}
+  </div>
+}
+
 export default function Page1() {
   const { rooms, addRoom } = useOutletContext<LayoutContext>()
   const [devices, setDevices] = useState<Device[]>([])
   const [deviceOptions, setDeviceOptions] = useState<DeviceTemplate[]>([])
+  const [temperatureHistory, setTemperatureHistory] = useState<TemperatureSample[]>(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(TEMPERATURE_HISTORY_KEY) ?? '[]')
+      return Array.isArray(saved) ? saved.filter((item): item is TemperatureSample => Number.isFinite(item?.time) && Number.isFinite(item?.value)).slice(-24) : []
+    } catch { return [] }
+  })
+  const [co2History, setCo2History] = useState<TemperatureSample[]>(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(CO2_HISTORY_KEY) ?? '[]')
+      return Array.isArray(saved) ? saved.filter((item): item is TemperatureSample => Number.isFinite(item?.time) && Number.isFinite(item?.value)).slice(-24) : []
+    } catch { return [] }
+  })
   const [controlOverrides, setControlOverrides] = useState<Record<string, boolean>>({})
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<DeviceTemplate | null>(null)
@@ -132,6 +173,29 @@ export default function Page1() {
       listDeviceTemplates()
         .then((templates) => {
           setDeviceOptions(templates)
+          const thermostat = templates.find((template) => template.key === 'thermostat')
+          const temperature = Number(thermostat?.state.temperature)
+          if (Number.isFinite(temperature)) {
+            const time = new Date()
+            time.setSeconds(0, 0)
+            setTemperatureHistory((history) => {
+              const last = history.at(-1)
+              const next = last?.time === time.getTime() ? [...history.slice(0, -1), { time: time.getTime(), value: temperature }] : [...history, { time: time.getTime(), value: temperature }].slice(-24)
+              window.localStorage.setItem(TEMPERATURE_HISTORY_KEY, JSON.stringify(next))
+              return next
+            })
+          }
+          const co2 = Number(templates.find((template) => template.key === 'ventilation')?.state.co2)
+          if (Number.isFinite(co2)) {
+            const time = new Date()
+            time.setSeconds(0, 0)
+            setCo2History((history) => {
+              const last = history.at(-1)
+              const next = last?.time === time.getTime() ? [...history.slice(0, -1), { time: time.getTime(), value: co2 }] : [...history, { time: time.getTime(), value: co2 }].slice(-24)
+              window.localStorage.setItem(CO2_HISTORY_KEY, JSON.stringify(next))
+              return next
+            })
+          }
           setControlOverrides((current) => {
             const remaining = { ...current }
             templates.forEach((template) => {
@@ -389,6 +453,8 @@ export default function Page1() {
                   <h2 className="device-card__name">{device.name}</h2>
                   {(template.key === 'light' || template.key === 'barrier') && <DeviceSwitch type={template.key} state={template.state} onToggle={() => toggleDevice(template)} />}
                   <DeviceState type={template.key} state={template.state} />
+                  {template.key === 'thermostat' && <MetricSparkline values={temperatureHistory.map((sample) => sample.value)} label="Изменение температуры" />}
+                  {template.key === 'ventilation' && <MetricSparkline values={co2History.map((sample) => sample.value)} label="Изменение уровня CO₂" />}
                 </div>
                 {deviceImages[template.key] ? (
                   <img className="device-card__image" src={deviceImages[template.key]} alt="" />
@@ -520,6 +586,18 @@ export default function Page1() {
                   </div>
                 ))}
               </dl>
+            )}
+            {deviceDetails && selectedDevice.templateKey === 'thermostat' && (
+              <section className="thermostat-history">
+                <h2>Температура за последние 24 минуты</h2>
+                <MetricTrend values={temperatureHistory.map((sample) => sample.value)} detailed label="Изменение температуры" />
+              </section>
+            )}
+            {deviceDetails && selectedDevice.templateKey === 'ventilation' && (
+              <section className="thermostat-history">
+                <h2>CO₂ за последние 24 минуты</h2>
+                <MetricTrend values={co2History.map((sample) => sample.value)} detailed label="Изменение уровня CO₂" />
+              </section>
             )}
             {isEditingName && <button type="button" className="device-modal__save" onClick={saveDeviceName} disabled={isSavingName || !editedName.trim()}>Сохранить</button>}
           </section>

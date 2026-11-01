@@ -69,8 +69,14 @@ function SettingsForm({ profile, setProfile }: SettingsFormProps) {
         >
           <span className="switch__thumb" />
         </button>
-        <EnableNotificationsButton />
+      </div>
 
+      <div className="settings__row settings__notifications">
+        <div>
+          <p className="settings__title">Уведомления в браузере</p>
+          <p className="settings__hint">Получайте уведомления, когда приложение открыто в фоне</p>
+        </div>
+        <EnableNotificationsButton className="settings__notifications-button" />
       </div>
 
       <form className="settings__form" onSubmit={handleSubmit}>
