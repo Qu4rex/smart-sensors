@@ -54,7 +54,7 @@ def set_emergency(name, on):
     if name == "leak":
         device.set_wet(on)
     elif name == "fire":
-        device.set_smoke(100 if on else 0)
+        device.set_emergency(on)
     elif name == "barrier":
         device.set_obstacle(on)
         device.set_value("alarm", 1 if on else 0)

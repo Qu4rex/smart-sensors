@@ -503,7 +503,20 @@ useEffect(() => {
           <h1 className="panel__title">Сценарии автоматизации</h1>
           <p className="panel__text">Правила взаимодействия между устройствами</p>
         </div>
-        <span className="scenarios__count">{pluralizeScenarios(rules.length)}</span>
+        <div className="scenarios__controls">
+          <span className="scenarios__count">{pluralizeScenarios(rules.length)}</span>
+          <div className="scenarios__toolbar">
+            {showForm ? (
+              <button type="button" className="scenarios__button" onClick={closeForm}>
+                Отмена
+              </button>
+            ) : (
+              <button type="button" className="scenarios__button scenarios__button--accent" onClick={openCreateForm}>
+                + Создать сценарий
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className={`scenarios__notice-slot${noticeOpen ? ' is-open' : ''}`}>
@@ -514,18 +527,6 @@ useEffect(() => {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="scenarios__toolbar">
-        {showForm ? (
-          <button type="button" className="scenarios__button" onClick={closeForm}>
-            Отмена
-          </button>
-        ) : (
-          <button type="button" className="scenarios__button scenarios__button--accent" onClick={openCreateForm}>
-            + Создать сценарий
-          </button>
-        )}
       </div>
 
       {showForm && (

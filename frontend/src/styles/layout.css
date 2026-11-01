@@ -40,6 +40,21 @@
   padding: clamp(1rem, 3vw, 2rem);
 }
 
+.devices-panel__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.devices-panel__greeting {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-weight: 500;
+}
+
 .room-tabs {
   width: fit-content;
   display: flex;
@@ -185,6 +200,10 @@
   object-position: right top;
 }
 
+.device-card__image--light-on {
+  transform: translate(-2px, 1px) scale(0.9);
+}
+
 .device-card__switch {
   width: 42px;
   height: 24px;
@@ -223,6 +242,10 @@
   line-height: 1;
 }
 
+.device-card__content:has(.thermostat-sparkline) .device-card__value {
+  margin-top: 10px;
+}
+
 .device-card__value small {
   font-size: 0.95rem;
   font-weight: 400;
@@ -257,6 +280,56 @@
   background: var(--color-hover);
 }
 
+.thermostat-trend {
+  display: block;
+  width: 100%;
+  height: 34px;
+  color: var(--color-accent);
+}
+
+.thermostat-sparkline {
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  width: min(110px, 100%);
+  height: 28px;
+  margin-top: 9px;
+  color: var(--color-accent);
+}
+
+.thermostat-sparkline span {
+  width: 3px;
+  flex: 1;
+  max-width: 4px;
+  border-radius: 99px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.thermostat-history {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.thermostat-history h2 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.thermostat-trend--details {
+  height: 86px;
+  color: var(--color-accent);
+}
+
+.thermostat-trend__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .modal-backdrop {
   position: fixed;
   z-index: 50;
@@ -283,7 +356,7 @@
 }
 
 .device-modal__subtitle {
-  margin: -16px 0 20px;
+  margin: -16px 0 5px;
   color: var(--color-muted);
 }
 
@@ -314,6 +387,50 @@
   margin: 0;
   font-weight: 600;
   text-align: right;
+}
+
+.device-details__target-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.device-details__target-control input {
+  width: 82px;
+  height: 32px;
+  padding: 0 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  outline: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+}
+
+.device-details__target-control input:focus {
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.device-details__target-control button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.device-details__target-control button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .device-details__room-select {
@@ -539,6 +656,64 @@
 
 .device-modal__menu-list .device-modal__menu-delete {
   color: var(--color-error);
+}
+
+.room-modal__menu {
+  margin-left: auto;
+}
+
+.room-modal__devices {
+  margin-top: 4px;
+}
+
+.room-modal__device-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room-modal__device-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 2px;
+}
+
+.room-modal__device-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.room-modal__device-list small {
+  color: var(--color-muted);
+}
+
+.room-modal__device-delete {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-error);
+  cursor: pointer;
+}
+
+.room-modal__device-delete:hover {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+}
+
+.room-modal__device-delete svg {
+  width: 17px;
+  height: 17px;
 }
 
 .device-modal__refresh {
@@ -818,6 +993,10 @@
   .devices-panel {
     padding: 12px;
     overflow: hidden;
+  }
+
+  .devices-panel__greeting {
+    display: none;
   }
 
   .room-tabs {
