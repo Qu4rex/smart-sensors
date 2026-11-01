@@ -541,6 +541,64 @@
   color: var(--color-error);
 }
 
+.room-modal__menu {
+  margin-left: auto;
+}
+
+.room-modal__devices {
+  margin-top: 4px;
+}
+
+.room-modal__device-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room-modal__device-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 2px;
+}
+
+.room-modal__device-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.room-modal__device-list small {
+  color: var(--color-muted);
+}
+
+.room-modal__device-delete {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-error);
+  cursor: pointer;
+}
+
+.room-modal__device-delete:hover {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+}
+
+.room-modal__device-delete svg {
+  width: 17px;
+  height: 17px;
+}
+
 .device-modal__refresh {
   width: 36px;
   height: 36px;
